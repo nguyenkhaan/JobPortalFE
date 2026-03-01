@@ -1,75 +1,185 @@
-# React + TypeScript + Vite
+# 🚀 JobPortalFE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend for a **Job Portal System** built with modern tooling:
+Vite + React + TypeScript, powered by Bun.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠 Tech Stack
 
-## React Compiler
+- ⚡ Vite
+- ⚛ React
+- 🟦 TypeScript
+- 🎨 TailwindCSS
+- 🧹 ESLint (Flat Config)
+- 🪝 Husky
+- 📝 Commitlint (Conventional Commits)
+- 🥟 Bun (runtime & package manager)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## 📦 Requirements
 
-## Expanding the ESLint configuration
+You need one of the following:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Node.js 18+**
+- **Bun 1.0+ (recommended)**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Check your version:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+node -v
+bun -v
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📥 Installation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Using Bun (recommended)
+
+```bash
+bun install
 ```
+
+### Using npm
+
+```bash
+npm install
+```
+
+---
+
+## 🧑‍💻 Development
+
+Start the Vite development server:
+
+```bash
+bun dev
+```
+
+or
+
+```bash
+npm run dev
+```
+
+Default URL:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 🏗 Build for Production
+
+```bash
+bun run build
+```
+
+or
+
+```bash
+npm run build
+```
+
+Preview production build locally:
+
+```bash
+bun run preview
+```
+
+---
+
+## 🧹 Code Quality
+
+### Lint
+
+```bash
+bun run lint
+```
+
+### Format (if configured)
+
+```bash
+bun run format
+```
+
+---
+
+## 🪝 Git Hooks & Commit Convention
+
+This project uses:
+
+- **Husky** for Git hooks
+- **Commitlint** with Conventional Commits standard
+
+Example valid commit messages:
+
+```
+feat: add login page
+fix: correct API endpoint
+chore: update dependencies
+refactor: improve auth logic
+docs: update README
+```
+
+If your commit message does not follow the convention,
+the commit will be rejected automatically.
+
+---
+
+## 📂 Project Structure
+
+```
+.
+├── commitlint.config.js
+├── eslint.config.js
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── hooks/
+│   ├── layouts/
+│   ├── pages/
+│   ├── services/
+│   ├── utils/
+│   ├── App.tsx
+│   └── main.tsx
+```
+
+---
+
+## 📜 Available Scripts
+
+| Script | Description |
+|--------|------------|
+| `dev` | Start development server |
+| `build` | Create production build |
+| `preview` | Preview production build |
+| `lint` | Run ESLint |
+| `format` | Format code (if configured) |
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+## ✨ Notes
+
+- Uses ES Modules (`"type": "module"`)
+- Flat ESLint configuration
+- Commit message validation enabled
+- Optimized for Bun performance
+
+---
+
+Built with ❤️ love. 
