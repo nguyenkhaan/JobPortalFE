@@ -1,4 +1,5 @@
 import { Search, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
 import Button from "../ui/Button";
 import IllustrationImage from "../../assets/IllustrationImage.svg";
 
@@ -6,7 +7,12 @@ export default function Hero() {
   return (
     <section className="w-full bg-gray-50 py-16 lg:py-24 px-8">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
-        <div className="flex-1 flex flex-col items-start gap-6 w-full">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex-1 flex flex-col items-start gap-6 w-full"
+        >
           <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
             Find a job that suits <br className="hidden lg:block" />
             your interest & skills.
@@ -48,10 +54,14 @@ export default function Hero() {
               Video, Animation.
             </span>
           </div>
-        </div>
-        <div className="flex-1 w-full flex justify-center lg:justify-end">
+        </motion.div>
+        <motion.div
+          animate={{ y: [-10, 10, -10] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="flex-1 w-full flex justify-center lg:justify-end"
+        >
           <img src={IllustrationImage} alt="Illustration image for hero" />
-        </div>
+        </motion.div>
       </div>
     </section>
   );

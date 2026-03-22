@@ -1,30 +1,31 @@
 import { Briefcase, Building2, Users } from "lucide-react";
+import CountUp from "react-countup";
 
 const statsData = [
   {
     id: 1,
-    count: "175,324",
+    count: 175324,
     label: "Live Job",
     icon: Briefcase,
     active: false,
   },
   {
     id: 2,
-    count: "97,354",
+    count: 97354,
     label: "Companies",
     icon: Building2,
     active: false,
   },
   {
     id: 3,
-    count: "3,847,154",
+    count: 3847154,
     label: "Candidates",
     icon: Users,
     active: false,
   },
   {
     id: 4,
-    count: "7,532",
+    count: 7532,
     label: "New Jobs",
     icon: Briefcase,
     active: false,
@@ -62,7 +63,7 @@ export default function Stats() {
                     stat.active ? "text-bg-white" : "text-gray-900"
                   }`}
                 >
-                  {stat.count}
+                  <CountUp end={stat.count} duration={1.5} separator="," />
                 </h3>
                 <p
                   className={`text-sm ${

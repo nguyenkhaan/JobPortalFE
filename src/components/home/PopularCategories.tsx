@@ -10,6 +10,7 @@ import {
   HeartPulse,
   Database,
 } from "lucide-react";
+import { motion, type Variants } from "framer-motion";
 
 const categories = [
   { id: 1, name: "Graphics & Design", openPositions: 357, icon: PenTool },
@@ -21,6 +22,17 @@ const categories = [
   { id: 7, name: "Health & Care", openPositions: 125, icon: HeartPulse },
   { id: 8, name: "Data & Science", openPositions: 57, icon: Database },
 ];
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+};
 
 export default function PopularCategories() {
   return (
@@ -38,30 +50,37 @@ export default function PopularCategories() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        >
           {categories.map((category) => {
             const Icon = category.icon;
             return (
-              <Link
-                key={category.id}
-                to={`categories/${category.id}`}
-                className="group flex items-center gap-4 p-5 rounded-xl border border-gray-100 bg-bg-white hover:border-primary-500 hover:shadow-sm transition-all duration-300"
-              >
-                <div className="p-4 rounded-lg bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-bg-white transition-colors duration-300">
-                  <Icon size={32} strokeWidth={1.5} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-500 transition-colors duration-300">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {category.openPositions} Open position
-                  </p>
-                </div>
-              </Link>
+              <motion.div variants={itemVariants} key={category.id}>
+                <Link
+                  to={`categories/${category.id}`}
+                  className="group flex items-center gap-4 p-5 rounded-xl border border-gray-100 bg-bg-white hover:border-primary-500 hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300"
+                >
+                  <div className="p-4 rounded-lg bg-primary-50 text-primary-500 group-hover:bg-primary-500 group-hover:text-bg-white transition-colors duration-300">
+                    <Icon size={32} strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-500 transition-colors duration-300">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {category.openPositions} Open position
+                    </p>
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
