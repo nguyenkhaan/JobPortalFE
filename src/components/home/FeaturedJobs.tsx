@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, MapPin, DollarSign, Bookmark } from "lucide-react";
 import Button from "../ui/Button";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const featuredJobs = [
   {
@@ -61,6 +63,17 @@ const featuredJobs = [
 ];
 
 export default function FeaturedJobs() {
+  const [saveJobs, setSaveJobs] = useState<number[]>([]);
+
+  const handleSaveJob = (id: number) => {
+    if (saveJobs.includes(id)) {
+      setSaveJobs(saveJobs.filter((jobId) => jobId != id));
+      toast.info("Job removed from saved jobs");
+    } else {
+      setSaveJobs([...saveJobs, id]);
+      toast.success("Job saved successfully");
+    }
+  };
   return (
     <section className="w-full py-16 lg:py-24 px-8 bg-bg-white">
       <div className="max-w-4xl mx-auto">
@@ -117,7 +130,10 @@ export default function FeaturedJobs() {
               </div>
 
               <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
-                <button className="p-3 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleSaveJob(job.id)}
+                  className="p-3 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
+                >
                   <Bookmark size={20} />
                 </button>
                 <Button

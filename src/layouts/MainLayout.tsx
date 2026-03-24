@@ -1,6 +1,8 @@
 import { Outlet } from "react-router-dom";
+import { Toaster } from "sonner";
 import Header from "../components/home/Header";
 import Footer from "../components/home/Footer";
+import BackToTop from "../components/home/BackToTop";
 
 export default function MainLayout() {
   return (
@@ -10,6 +12,8 @@ export default function MainLayout() {
         <Outlet />
       </main>
       <Footer />
+      <Toaster richColors position="bottom-right" />
+      <BackToTop />
     </div>
   );
 }

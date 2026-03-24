@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Search, PhoneCall } from "lucide-react";
+import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import Button from "../ui/Button";
 import JobLogo from "../../assets/JobLogo.svg";
-import ComboBox from "./ComboBox";
+import ComboBox from "../ui/ComboBox";
 
 const languages = [
   { label: "English", value: "english" },
@@ -18,8 +20,25 @@ const navLinks = [
 ];
 
 export default function Header() {
+  const { scrollY } = useScroll();
+  const [hidden, setHidden] = useState(false);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    if (latest > 150 && latest > previous) {
+      setHidden(true);
+    } else setHidden(false);
+  });
   return (
-    <header className="w-full border-b border-gray-100 bg-bg-white top-0 z-50">
+    <motion.header
+      variants={{
+        visible: { y: 0 },
+        hidden: { y: "-100%" },
+      }}
+      animate={hidden ? "hidden" : "visible"}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="w-full border-b border-gray-100 bg-bg-white sticky top-0 z-50"
+    >
       <div className="hidden lg:flex justify-between items-center py-2 px-8 bg-gray-50 text-sm text-gray-500 border-gray-100">
         <nav className="flex items-center gap-6">
           {navLinks.map((link) => (
@@ -85,6 +104,6 @@ export default function Header() {
           </Button>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 }

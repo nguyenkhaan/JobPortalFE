@@ -1,4 +1,3 @@
-// src/components/PopularVacancies.tsx
 import { Link } from "react-router-dom";
 
 const vacancies = [
