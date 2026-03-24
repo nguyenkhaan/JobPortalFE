@@ -1,10 +1,42 @@
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import type { ForgotPasswordRequest } from "../../types/auth";
+
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import GoogleLogo from "../../assets/GooogleLogo.svg";
+import { authService } from "../../services/authService";
 
 export default function ForgotPassowrd() {
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleForgotPassowrd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email!");
+      return;
+    }
+    try {
+      setIsLoading(false);
+      const payload: ForgotPasswordRequest = { email };
+
+      const message = await authService.forgotPassword(payload);
+      toast.success(message);
+      setEmail("");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Request failed, please try again!");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="mb-8">
@@ -32,10 +64,27 @@ export default function ForgotPassowrd() {
           </p>
         </div>
       </div>
-      <form className="flex flex-col gap-5">
-        <Input type="email" placeholder="Email address" />
-        <Button variant="primary" fullWidth className="mt-2">
-          Reset Password <ArrowRight size={20} />
+      <form onSubmit={handleForgotPassowrd} className="flex flex-col gap-5">
+        <Input
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
+        />
+        <Button
+          variant="primary"
+          fullWidth
+          className="mt-2 flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <>
+              Reset Password <ArrowRight size={20} />
+            </>
+          )}
         </Button>
       </form>
       <div className="flex items-center gap-4 my-6">

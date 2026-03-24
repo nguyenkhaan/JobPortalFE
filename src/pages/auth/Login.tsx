@@ -1,10 +1,46 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { authService } from "../../services/authService";
+import type { LoginRequest } from "../../types/auth";
+
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import GoogleLogo from "../../assets/GooogleLogo.svg";
 
 export default function Login() {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // handle when click sign in
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const payload: LoginRequest = { email, password };
+
+      const data = await authService.login(payload);
+      localStorage.setItem("access_token", data.accessToken);
+      localStorage.setItem("refresh_token", data.refreshToken);
+
+      toast.success("Login successfully");
+      navigate("/");
+    } catch (error) {
+      if (error instanceof Error)
+        toast.error(error.message || "Login faied, Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="mb-8">
@@ -20,9 +56,23 @@ export default function Login() {
         </p>
       </div>
 
-      <form className="flex flex-col gap-5">
-        <Input type="email" placeholder="Email address" />
-        <Input type="password" placeholder="Password" />
+      <form onSubmit={handleLogin} className="flex flex-col gap-5">
+        <Input
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setEmail(e.target.value)
+          }
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setPassword(e.target.value)
+          }
+        />
 
         <div className="flex items-center justify-between -mt-1">
           <label className="flex items-center gap-2 text-gray-600">
@@ -39,8 +89,19 @@ export default function Login() {
             Forgot password
           </Link>
         </div>
-        <Button variant="primary" fullWidth className="mt-2">
-          Sign In <ArrowRight size={20} />
+        <Button
+          variant="primary"
+          fullWidth
+          className="mt-2"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : (
+            <>
+              Sign In <ArrowRight size={20} />
+            </>
+          )}
         </Button>
       </form>
       <div className="flex items-center gap-4 my-6 ">

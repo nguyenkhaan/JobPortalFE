@@ -4,7 +4,7 @@ import { Search, PhoneCall } from "lucide-react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import Button from "../ui/Button";
 import JobLogo from "../../assets/JobLogo.svg";
-import ComboBox from "./ComboBox";
+import ComboBox from "../ui/ComboBox";
 
 const languages = [
   { label: "English", value: "english" },
