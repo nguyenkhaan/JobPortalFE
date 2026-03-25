@@ -7,23 +7,23 @@ import type { ForgotPasswordRequest } from "../../types/auth";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 import GoogleLogo from "../../assets/GooogleLogo.svg";
-import { authService } from "../../services/authService";
+import { AuthService } from "../../services/authService";
 
-export default function ForgotPassowrd() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleForgotPassowrd = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
       toast.error("Please enter your email!");
       return;
     }
     try {
-      setIsLoading(false);
+      setIsLoading(true); 
       const payload: ForgotPasswordRequest = { email };
 
-      const message = await authService.forgotPassword(payload);
+      const message = await AuthService.forgotPassword(payload);
       toast.success(message);
       setEmail("");
     } catch (error) {
@@ -64,7 +64,7 @@ export default function ForgotPassowrd() {
           </p>
         </div>
       </div>
-      <form onSubmit={handleForgotPassowrd} className="flex flex-col gap-5">
+      <form onSubmit={handleForgotPassword} className="flex flex-col gap-5">
         <Input
           type="email"
           placeholder="Email address"
@@ -77,6 +77,7 @@ export default function ForgotPassowrd() {
           variant="primary"
           fullWidth
           className="mt-2 flex items-center justify-center gap-2"
+          disabled={isLoading}
         >
           {isLoading ? (
             <Loader2 className="animate-spin" size={20} />
