@@ -58,15 +58,15 @@ export default function ImageUpload({
   return (
     <div className="flex flex-col gap-2 w-full">
       <div
-        className={`relative flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer p-6 ${className}`}
+        className={`relative flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer p-4 overflow-hidden group ${className}`}
         onClick={() => inputRef.current?.click()}
       >
         {previewUrl ? (
           <div className="relative w-full h-full">
             <img
-              src="{previewUrl}"
+              src={previewUrl}
               alt="Preview"
-              className="w-full h-full object-cover roudned-md"
+              className="w-full h-full object-cover rounded-md"
             />
             <button
               type="button"
@@ -78,7 +78,7 @@ export default function ImageUpload({
             </button>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center p-4">
+          <div className="flex flex-col items-center justify-center text-center p-2">
             <UploadCloud className="w-10 h-10 text-primary-500 mb-3" />
             <p className="text-sm text-gray-900 font-medium">
               <span className="text-gray-900">{label}</span> or drop here
