@@ -1,7 +1,7 @@
 import { Search, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
-import Button from "../ui/Button";
-import IllustrationImage from "../../assets/IllustrationImage.svg";
+import Button from "../../../components/ui/Button";
+import IllustrationImage from "../../../assets/IllustrationImage.svg";
 
 export default function Hero() {
   return (

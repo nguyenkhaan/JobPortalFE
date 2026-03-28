@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import JobLogo from "../../assets/JobLogo.svg";
-import SocialMediaIcon from "../../assets/Social_Media.svg";
+import JobLogo from "../../../assets/JobLogo.svg";
+import SocialMediaIcon from "../../../assets/Social_Media.svg";
 
 export default function Footer() {
   return (

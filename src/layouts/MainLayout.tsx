@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
 import { Toaster } from "sonner";
-import Header from "../components/home/Header";
-import Footer from "../components/home/Footer";
-import BackToTop from "../components/home/BackToTop";
+import Header from "../pages/home/components/Header";
+import Footer from "../pages/home/components/Footer";
+import BackToTop from "../pages/home/components/BackToTop";
 
 export default function MainLayout() {
   return (

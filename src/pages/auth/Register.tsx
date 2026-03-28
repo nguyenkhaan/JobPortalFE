@@ -7,7 +7,7 @@ import GoogleLogo from "../../assets/GooogleLogo.svg";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import type { RegisterRequest } from "../../types/auth";
-import { authService } from "../../services/authService";
+import { AuthService } from "../../services/authService";
 
 const accountTypes = [
   { label: "Employers", value: "employers" },
@@ -44,7 +44,7 @@ export default function Register() {
         email,
         password,
       };
-      await authService.register(payload);
+      await AuthService.register(payload);
       toast.success("Create a new account successfully! ");
       navigate("/login");
     } catch (error) {

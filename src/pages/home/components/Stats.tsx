@@ -63,7 +63,7 @@ export default function Stats() {
                     stat.active ? "text-bg-white" : "text-gray-900"
                   }`}
                 >
-                  <CountUp end={stat.count} duration={1.5} separator="," />
+                  <CountUp end={stat.count} duration={2.5} separator="," />
                 </h3>
                 <p
                   className={`text-sm ${

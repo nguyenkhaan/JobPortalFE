@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { authService } from "../../services/authService";
+import { AuthService } from "../../services/authService";
 import type { LoginRequest } from "../../types/auth";
 
 import Input from "../../components/ui/Input";
@@ -27,7 +27,12 @@ export default function Login() {
       setIsLoading(true);
       const payload: LoginRequest = { email, password };
 
-      const data = await authService.login(payload);
+      // test code and toast event
+      // if (email === "leminhthang24012006@gmail.com" && password === "123") {
+      //   toast.success("Login successfully");
+      //   return;
+      // }
+      const data = await AuthService.login(payload);
       localStorage.setItem("access_token", data.accessToken);
       localStorage.setItem("refresh_token", data.refreshToken);
 

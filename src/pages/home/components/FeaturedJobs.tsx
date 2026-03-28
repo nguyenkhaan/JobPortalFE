@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, MapPin, DollarSign, Bookmark } from "lucide-react";
-import Button from "../ui/Button";
+import Button from "../../../components/ui/Button";
 import { toast } from "sonner";
 import { useState } from "react";
 

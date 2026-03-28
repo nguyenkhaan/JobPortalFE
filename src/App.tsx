@@ -1,14 +1,22 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Toaster } from "sonner";
 
 import MainLayout from "./layouts/MainLayout";
 import AuthLayout from "./layouts/AuthLayout";
+import EmployerSetupLayout from "./layouts/EmployerSetupLayout";
+import EmployerLayout from "./layouts/EmployerLayout";
 
-import Home from "./pages/Home";
+import Home from "./pages/home/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import CompanyInfo from "./pages/Employer/AccountSetup/CompanyInfo";
+import FoundingInfo from "./pages/Employer/AccountSetup/FoundingInfo";
+import SocialLink from "./pages/Employer/AccountSetup/SocialLinks";
+import Contact from "./pages/Employer/AccountSetup/Contact";
+import SetupSuccess from "./pages/Employer/AccountSetup/SetupSuccess";
 
 const router = createBrowserRouter([
   {
@@ -24,10 +32,30 @@ const router = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPassword /> },
     ],
   },
+  {
+    path: "/employer/setup",
+    element: <EmployerSetupLayout />,
+    children: [
+      { path: "company", element: <CompanyInfo /> },
+      { path: "founding", element: <FoundingInfo /> },
+      { path: "social", element: <SocialLink /> },
+      { path: "contact", element: <Contact /> },
+      { path: "success", element: <SetupSuccess /> },
+    ],
+  },
+  {
+    element: <EmployerLayout />,
+    children: [],
+  },
   { path: "/verify-email", element: <VerifyEmail /> },
   { path: "/reset-password", element: <ResetPassword /> },
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <Toaster position="bottom-right" richColors />
+      <RouterProvider router={router} />;
+    </>
+  );
 }

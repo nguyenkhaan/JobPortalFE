@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Search, PhoneCall } from "lucide-react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
-import Button from "../ui/Button";
-import JobLogo from "../../assets/JobLogo.svg";
-import ComboBox from "../ui/ComboBox";
+import Button from "../../../components/ui/Button";
+import JobLogo from "../../../assets/JobLogo.svg";
+import ComboBox from "../../../components/ui/ComboBox";
 
 const languages = [
   { label: "English", value: "english" },

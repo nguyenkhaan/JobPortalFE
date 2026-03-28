@@ -1,4 +1,8 @@
-import api from "./axiosClient";
+import { publicApi, privateApi } from "../api/api";
+import { TokenType } from "../bases/enums/jwt.enum";
+import { CookiesService } from "./cookieServices";
+import { LocalStorageService } from "./localStorageService";
+
 import type {
   ApiResponse,
   LoginResponseDto,
@@ -8,50 +12,75 @@ import type {
   ResetPasswordRequest,
 } from "../types/auth";
 
-export const authService = {
-  async login(payload: LoginRequest): Promise<LoginResponseDto> {
-    const result = await api.post<ApiResponse<LoginResponseDto>>(
+export class AuthService {
+  static async login(payload: LoginRequest): Promise<LoginResponseDto> {
+    const result = await publicApi.post<unknown, ApiResponse<LoginResponseDto>>(
       "/auth/login",
       payload,
     );
-    if (!result.data?.isSuccess || !result.data?.value) {
-      throw new Error(result.data?.errorMessage || "Login is failure");
+
+    if (!result.isSuccess || !result.value) {
+      throw new Error(result.errorMessage || "Login failed");
     }
 
-    return result.data.value;
-  },
-
-  async register(payload: RegisterRequest): Promise<void> {
-    const result = await api.post<ApiResponse<string>>(
+    return result.value;
+  }
+  static async register(payload: RegisterRequest): Promise<void> {
+    const result = await publicApi.post<unknown, ApiResponse<string>>(
       "/auth/register",
       payload,
     );
 
-    if (!result.data?.isSuccess) {
-      throw new Error(result.data?.errorMessage || "Register is failure");
+    if (!result.isSuccess) {
+      throw new Error(result.errorMessage || "Registration failed");
     }
-  },
+  }
 
-  async forgotPassword(payload: ForgotPasswordRequest): Promise<string> {
-    const result = await api.post<ApiResponse<string>>(
+  static async forgotPassword(payload: ForgotPasswordRequest): Promise<string> {
+    const result = await publicApi.post<unknown, ApiResponse<string>>(
       "/auth/forgot-password",
       payload,
     );
-    if (!result.data?.isSuccess) {
-      throw new Error(result.data?.errorMessage || "Request failed");
+
+    if (!result.isSuccess) {
+      throw new Error(result.errorMessage || "Failed to send request");
     }
 
-    return result.data.value || "Please check your email";
-  },
+    return result.value || "Please check your email";
+  }
 
-  async ResetPassword(payload: ResetPasswordRequest): Promise<string> {
-    const result = await api.post<ApiResponse<string>>(
+  static async resetPassword(payload: ResetPasswordRequest): Promise<string> {
+    const result = await publicApi.post<unknown, ApiResponse<string>>(
       "/auth/reset-password",
       payload,
     );
-    if (!result.data.isSuccess) {
-      throw new Error(result.data?.errorMessage || "Reset password failed");
+
+    if (!result.isSuccess) {
+      throw new Error(result.errorMessage || "Password reset failed");
     }
-    return result.data.value || "Reset password successfully";
-  },
-};
+
+    return result.value || "Password reset successful";
+  }
+
+  static async me() {
+    const result = await privateApi.get<unknown, ApiResponse<unknown>>(
+      "/auth/me",
+    );
+
+    if (!result.isSuccess || !result.value) {
+      throw new Error(
+        result.errorMessage || "Failed to fetch user information",
+      );
+    }
+
+    return result.value;
+  }
+
+  static checkLogin(): boolean {
+    return !!(
+      CookiesService.getToken(TokenType.ACCESS_TOKEN) &&
+      CookiesService.getToken(TokenType.REFRESH_TOKEN) &&
+      LocalStorageService.getValue("me")
+    );
+  }
+}
