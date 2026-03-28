@@ -14,6 +14,9 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import CompanyInfo from "./pages/Employer/AccountSetup/CompanyInfo";
 import FoundingInfo from "./pages/Employer/AccountSetup/FoundingInfo";
+import SocialLink from "./pages/Employer/AccountSetup/SocialLinks";
+import Contact from "./pages/Employer/AccountSetup/Contact";
+import SetupSuccess from "./pages/Employer/AccountSetup/SetupSuccess";
 
 const router = createBrowserRouter([
   {
@@ -35,9 +38,9 @@ const router = createBrowserRouter([
     children: [
       { path: "company", element: <CompanyInfo /> },
       { path: "founding", element: <FoundingInfo /> },
-      // { path: "social", element: <SocialProfile /> },
-      // { path: "contact", element: <Contact /> },
-      // { path: "success", element: <SetupSuccess /> },
+      { path: "social", element: <SocialLink /> },
+      { path: "contact", element: <Contact /> },
+      { path: "success", element: <SetupSuccess /> },
     ],
   },
   {

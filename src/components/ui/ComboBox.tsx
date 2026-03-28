@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 export interface OptionType {
   label: string;
   value: string;
+  icon?: React.ReactNode;
 }
 
 interface ComboBoxProps {
@@ -40,7 +41,12 @@ export default function ComboBox({
         className="flex items-center justify-between w-full px-4 py-3 text-sm bg-white border border-gray-200 rounded-md cursor-pointer hover:border-primary-500 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className={value ? "text-gray-900" : "text-gray-400"}>
+        <span
+          className={`flex items-center gap-2 ${value ? "text-gray-900" : "text-gray-400"} `}
+        >
+          {value?.icon && (
+            <span className="text-primary-500"> {value.icon} </span>
+          )}
           {value ? value.label : placeholder}
         </span>
         <ChevronDown size={16} className="text-gray-400" />
@@ -61,6 +67,18 @@ export default function ComboBox({
                 setIsOpen(false);
               }}
             >
+              {option.icon && (
+                <span
+                  className={
+                    value?.icon === option.icon
+                      ? "text-primary-500"
+                      : "text-gray-500"
+                  }
+                >
+                  {" "}
+                  {option.icon}{" "}
+                </span>
+              )}
               {option.label}
             </div>
           ))}

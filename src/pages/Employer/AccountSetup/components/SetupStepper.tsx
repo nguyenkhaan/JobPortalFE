@@ -17,7 +17,7 @@ export default function SetupStepper({
 }: SetupStepperProps) {
   if (isSuccessPage) return null;
   return (
-    <div className="w-full max-w-5xl mb-12 flex border-b border-gray-200">
+    <div className="min-w-3xl mb-12 flex border-b border-gray-200">
       {steps.map((step, index) => {
         const Icon = step.icon;
         const isActive = currentStepIndex == index;
