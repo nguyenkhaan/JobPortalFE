@@ -4,6 +4,7 @@ import { type EmployerProfile, type ApprovalStatus } from "./types";
 interface EmployerTableProps {
   employers: EmployerProfile[];
   onReview: (id: string) => void;
+  isLoading?: boolean;
 }
 
 const renderStatusBadge = (status: ApprovalStatus) => {
@@ -34,6 +35,7 @@ const renderStatusBadge = (status: ApprovalStatus) => {
 export default function EmployerTable({
   employers,
   onReview,
+  isLoading = false,
 }: EmployerTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -48,7 +50,13 @@ export default function EmployerTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {employers.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                Loading employers...
+              </td>
+            </tr>
+          ) : employers.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                 No employers found in this category

@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Globe, Loader2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import Input from "../../../../../components/ui/Input";
 import Button from "../../../../../components/ui/Button";
+import { JobSeekerService } from "../../../../../services/jobSeekerService";
 
 export default function BasicInfoForm() {
   const [fullName, setFullName] = useState("");
@@ -10,7 +12,47 @@ export default function BasicInfoForm() {
   const [experience, setExperience] = useState("");
   const [education, setEducation] = useState("");
   const [website, setWebsite] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  useQuery({
+    queryKey: ["jobseeker-profile"],
+    queryFn: async () => {
+      const profile = await JobSeekerService.getProfile();
+      setFullName(profile.fullName || "");
+      setTitle(profile.professionalTitle || "");
+      setExperience(profile.experienceSummary || "");
+      setEducation(profile.educationSummary || "");
+      setWebsite(profile.website || "");
+      return profile;
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        fullName,
+        professionalTitle: title,
+        experienceSummary: experience,
+        educationSummary: education,
+        website,
+      };
+
+      try {
+        return await JobSeekerService.updateProfile(payload);
+      } catch {
+        return JobSeekerService.createProfile(payload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobseeker-profile"] });
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
+      if (error instanceof Error) {
+        toast.error(error.message || "Failed to update profile.");
+      }
+    },
+  });
 
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,18 +60,7 @@ export default function BasicInfoForm() {
       toast.error("Please fill in your full name and headline title.");
       return;
     }
-
-    try {
-      setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Giả lập gọi API
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message || "Failed to update profile.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    saveMutation.mutate();
   };
 
   return (
@@ -100,8 +131,12 @@ export default function BasicInfoForm() {
       </div>
 
       <div className="text-left pt-2">
-        <Button variant="primary" className="px-8" disabled={isLoading}>
-          {isLoading ? (
+        <Button
+          variant="primary"
+          className="px-8"
+          disabled={saveMutation.isPending}
+        >
+          {saveMutation.isPending ? (
             <Loader2 className="animate-spin" size={20} />
           ) : (
             <>

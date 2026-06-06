@@ -1,18 +1,25 @@
-import { privateApi } from "../api/api";
+import { privateApi, unwrap, unwrapPage } from "../api/api";
 import type {
   ApplicationStatus,
+  JobApplication,
   JobApplicationDetail,
 } from "../types/application";
 
 export const ApplicationService = {
-  getApplications: async () => {
-    const response = await privateApi.get("/job-application");
-    return response.data;
+  getApplications: async (params: { jobPostId?: number; offset?: number; limit?: number } = {}) => {
+    const response = await privateApi.get("/job-application", {
+      params: {
+        jobPostId: params.jobPostId,
+        offset: params.offset ?? 0,
+        limit: params.limit ?? 50,
+      },
+    });
+    return unwrapPage<JobApplication>(response);
   },
 
   getApplicationById: async (id: number): Promise<JobApplicationDetail> => {
     const response = await privateApi.get(`/job-application/${id}`);
-    return response.data;
+    return unwrap<JobApplicationDetail>(response);
   },
 
   updateStatus: async (id: number, status: ApplicationStatus) => {
@@ -20,12 +27,12 @@ export const ApplicationService = {
       status,
     });
 
-    return response.data;
+    return unwrap(response);
   },
 
   deleteApplication: async (id: number) => {
     const response = await privateApi.delete(`/job-application/${id}`);
 
-    return response.data;
+    return unwrap(response);
   },
 };

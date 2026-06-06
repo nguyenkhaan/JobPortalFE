@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { EmployerService } from "../services/employerService";
 import type { JobResponse } from "../types/employer";
-
-interface SavedCandidateResponse {
-  id: number;
-}
+import type { SavedCandidatesResponse } from "../types/savedCandidates";
 
 interface MappedJob {
   id: number;
@@ -27,8 +24,9 @@ export const useEmployerDashboard = () => {
   return useQuery({
     queryKey: ["employerDashboard"],
     queryFn: async () => {
-      const jobs: JobResponse[] = await EmployerService.getRecentJobs();
-      const saved: { data: SavedCandidateResponse[] } =
+      const jobsResponse = await EmployerService.getRecentJobs({ limit: 5 });
+      const jobs: JobResponse[] = jobsResponse.items;
+      const saved: SavedCandidatesResponse[] =
         await EmployerService.getSavedCandidates();
 
       const mappedJobs: MappedJob[] = jobs.map((job) => ({
@@ -37,12 +35,12 @@ export const useEmployerDashboard = () => {
         type: job.employmentType.replace("_", " "),
         remaining: getRemainingDays(job.expiresAt),
         status: job.status === "OPEN" ? "Active" : "Expired",
-        applications: 0,
+        applications: job.applicationCount || 0,
       }));
 
       return {
         jobs: mappedJobs,
-        savedCandidates: saved.data?.length || 0,
+        savedCandidates: saved.length || 0,
       };
     },
   });

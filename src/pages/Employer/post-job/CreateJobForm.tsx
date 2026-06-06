@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import ApplyJobType from "./components/ApplyJobType";
@@ -7,6 +8,7 @@ import PostSuccessModal from "./components/PostSuccessModal";
 import Input from "../../../components/ui/Input";
 import CustomDropdown from "../../../components/ui/DropDown";
 import CustomDatePicker from "../../../components/ui/DatePicker";
+import { JobService } from "../../../services/jobService";
 
 const roleOptions = [
   { label: "Designer", value: "designer" },
@@ -15,14 +17,14 @@ const roleOptions = [
 ];
 
 const salaryTypeOptions = [
-  { label: "Monthly", value: "monthly" },
-  { label: "Yearly", value: "yearly" },
-  { label: "Hourly", value: "hourly" },
+  { label: "Monthly", value: "MONTHLY" },
+  { label: "Yearly", value: "YEARLY" },
+  { label: "Hourly", value: "HOURLY" },
 ];
 
 const educationOptions = [
-  { label: "Bachelor Degree", value: "bachelor" },
-  { label: "Master Degree", value: "master" },
+  { label: "Bachelor Degree", value: "BACHELOR" },
+  { label: "Master Degree", value: "MASTER" },
 ];
 
 const experienceOptions = [
@@ -32,8 +34,11 @@ const experienceOptions = [
 ];
 
 const jobTypeOptions = [
-  { label: "Full Time", value: "fulltime" },
-  { label: "Part Time", value: "parttime" },
+  { label: "Full Time", value: "FULL_TIME" },
+  { label: "Part Time", value: "PART_TIME" },
+  { label: "Internship", value: "INTERNSHIP" },
+  { label: "Contract Base", value: "CONTRACT" },
+  { label: "Temporary", value: "TEMPORARY" },
 ];
 
 const vacanciesOptions = [
@@ -43,11 +48,13 @@ const vacanciesOptions = [
 ];
 
 const jobLevelOptions = [
-  { label: "Junior", value: "junior" },
-  { label: "Senior", value: "senior" },
+  { label: "Junior", value: "JUNIOR" },
+  { label: "Middle", value: "MIDDLE" },
+  { label: "Senior", value: "SENIOR" },
 ];
 
 export default function CreateJobForm() {
+  const queryClient = useQueryClient();
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -80,13 +87,45 @@ export default function CreateJobForm() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const createJobMutation = useMutation({
+    mutationFn: () =>
+      JobService.createJob({
+        title: formData.title,
+        description: formData.description,
+        salaryMin: Number(formData.minSalary || 0),
+        salaryMax: Number(formData.maxSalary || 0),
+        educationLevel: formData.education || "BACHELOR",
+        jobLevel: formData.jobLevel || "JUNIOR",
+        status: "OPEN",
+        experience: Number(formData.experience || 1),
+        employmentType: formData.jobType || "FULL_TIME",
+        expiresAt: formData.expirationDate
+          ? `${formData.expirationDate}T00:00:00`
+          : null,
+        tags: formData.tags,
+        jobRole: formData.role,
+        responsibilities: formData.responsibilities,
+        vacancies: Number(formData.vacancies || 1),
+        salaryType: formData.salaryType || "MONTHLY",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employer-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["employerDashboard"] });
+      setIsSuccessModalOpen(true);
+      toast.success("Job posted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to create job post");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title) {
       toast.error("Job Title is required!");
       return;
     }
-    setIsSuccessModalOpen(true);
+    createJobMutation.mutate();
   };
 
   return (
@@ -292,9 +331,11 @@ export default function CreateJobForm() {
         <div className="mt-2">
           <button
             type="submit"
+            disabled={createJobMutation.isPending}
             className="flex items-center justify-center gap-2 px-8 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition-colors"
           >
-            Post Job <ArrowRight size={18} />
+            {createJobMutation.isPending ? "Posting..." : "Post Job"}{" "}
+            <ArrowRight size={18} />
           </button>
         </div>
       </form>

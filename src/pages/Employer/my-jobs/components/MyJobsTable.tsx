@@ -26,6 +26,7 @@ interface MyJobsTableProps {
   onPromote: (id: string) => void;
   onViewDetail: (id: string) => void;
   onMarkExpired: (id: string) => void;
+  isLoading?: boolean;
 }
 
 export default function MyJobsTable({
@@ -34,6 +35,7 @@ export default function MyJobsTable({
   onPromote,
   onViewDetail,
   onMarkExpired,
+  isLoading = false,
 }: MyJobsTableProps) {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -67,7 +69,19 @@ export default function MyJobsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {jobs.map((job) => {
+            {isLoading ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  Loading jobs...
+                </td>
+              </tr>
+            ) : jobs.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  No jobs found.
+                </td>
+              </tr>
+            ) : jobs.map((job) => {
               const rowClass = job.isHighlighted
                 ? "bg-amber-50/50 hover:bg-amber-100/50 border-l-4 border-l-amber-400 transition-colors group"
                 : "hover:bg-blue-50/30 border-l-4 border-l-transparent transition-colors group";

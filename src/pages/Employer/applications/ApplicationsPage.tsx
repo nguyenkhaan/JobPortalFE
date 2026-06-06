@@ -3,6 +3,7 @@ import { Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 
 import KanbanColumn, { type ColumnData } from "./components/KanbanColumn";
 import CandidateProfileModal from "../components/CandidateProfileModal";
@@ -27,7 +28,10 @@ const FIXED_COLUMNS: ColumnData[] = [
 
 export default function ApplicationsPage() {
   const queryClient = useQueryClient();
-  const { data: apiApplications, isLoading } = useApplications();
+  const [searchParams] = useSearchParams();
+  const jobIdParam = searchParams.get("jobId");
+  const jobPostId = jobIdParam ? Number(jobIdParam) : undefined;
+  const { data: apiApplications, isLoading } = useApplications(jobPostId);
   const { mutate: updateStatus } = useUpdateApplicationStatus();
   const { mutate: deleteApplication } = useDeleteApplication();
 
@@ -61,21 +65,21 @@ export default function ApplicationsPage() {
       columnId: app.status,
       name: app.jobSeekerProfile?.fullName || "Unknown Applicant",
       avatar: null,
-      role: "Applied Candidate",
-      experience: "Not specified",
-      education: "Not specified",
+      role: app.jobSeekerProfile?.professionalTitle || "Applied Candidate",
+      experience: app.jobSeekerProfile?.experienceSummary || "Not specified",
+      education: app.jobSeekerProfile?.educationSummary || "Not specified",
       appliedDate: app.appliedAt || new Date().toISOString(),
-      biography: "No biography available.",
+      biography: app.jobSeekerProfile?.biography || "No biography available.",
       coverLetter: app.coverLetter || "No cover letter provided.",
-      dateOfBirth: "Unknown",
-      nationality: "Unknown",
-      maritalStatus: "Unknown",
-      gender: "Unknown",
-      website: "",
+      dateOfBirth: app.jobSeekerProfile?.dateOfBirth || "Unknown",
+      nationality: app.jobSeekerProfile?.nationality || "Unknown",
+      maritalStatus: app.jobSeekerProfile?.maritalStatus || "Unknown",
+      gender: app.jobSeekerProfile?.gender || "Unknown",
+      website: app.jobSeekerProfile?.website || "",
       location: app.jobSeekerProfile?.address || "Unknown Location",
       phone: app.jobSeekerProfile?.phone || "No Phone",
-      secondaryPhone: "",
-      email: "Unknown Email",
+      secondaryPhone: app.jobSeekerProfile?.secondaryPhone || "",
+      email: app.jobSeekerProfile?.email || "Unknown Email",
       social: {},
     }));
   }, [apiApplications]);

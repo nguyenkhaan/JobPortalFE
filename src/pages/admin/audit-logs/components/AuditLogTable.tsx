@@ -7,6 +7,7 @@ interface AuditLogTableProps {
   onToggleSelectAll: (checked: boolean) => void;
   onToggleSelectRow: (id: string, checked: boolean) => void;
   onViewDetail: (log: AuditLog) => void;
+  isLoading?: boolean;
 }
 
 const getActionColor = (action: ActionType) => {
@@ -30,6 +31,7 @@ export default function AuditLogTable({
   onToggleSelectAll,
   onToggleSelectRow,
   onViewDetail,
+  isLoading = false,
 }: AuditLogTableProps) {
   const isAllSelected = logs.length > 0 && selectedIds.length === logs.length;
   const isIndeterminate =
@@ -59,7 +61,13 @@ export default function AuditLogTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {logs.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                Loading audit logs...
+              </td>
+            </tr>
+          ) : logs.length === 0 ? (
             <tr>
               <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                 No logs found matching your filters.

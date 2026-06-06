@@ -11,6 +11,17 @@ export interface JobSeekerProfile {
   fullName: string;
   address: string;
   phone: string;
+  email?: string;
+  secondaryPhone?: string;
+  professionalTitle?: string;
+  biography?: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  maritalStatus?: string;
+  gender?: string;
+  experienceSummary?: string;
+  educationSummary?: string;
+  website?: string;
 }
 
 export interface JobApplication {
@@ -19,6 +30,10 @@ export interface JobApplication {
   status: ApplicationStatus;
   appliedAt?: string;
   jobSeekerProfile: JobSeekerProfile;
+  jobPost: {
+    id: number;
+    title: string;
+  };
 }
 
 export interface JobApplicationResponse {
@@ -37,17 +52,18 @@ export interface JobApplicationDetail {
   jobSeekerProfile: {
     id: number;
     fullName: string;
+    email?: string;
     address: string;
     phone: string;
-    secondaryPhone: string;
-    email: string;
+    secondaryPhone?: string;
+    professionalTitle?: string;
     biography?: string;
     dateOfBirth?: string;
     nationality?: string;
     maritalStatus?: string;
     gender?: string;
-    experience?: string;
-    education?: string;
+    experienceSummary?: string;
+    educationSummary?: string;
     website?: string;
     social?: {
       facebook?: string;

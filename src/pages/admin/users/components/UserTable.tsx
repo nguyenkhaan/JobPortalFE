@@ -7,6 +7,7 @@ interface UserTableProps {
   onToggleDropdown: (id: string | null) => void;
   onToggleStatusClick: (user: UserProfile) => void;
   onDeleteClick: (user: UserProfile) => void;
+  isLoading?: boolean;
 }
 
 export default function UserTable({
@@ -15,6 +16,7 @@ export default function UserTable({
   onToggleDropdown,
   onToggleStatusClick,
   onDeleteClick,
+  isLoading = false,
 }: UserTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -29,7 +31,13 @@ export default function UserTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {users.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                Loading users...
+              </td>
+            </tr>
+          ) : users.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                 No users found
@@ -124,7 +132,7 @@ export default function UserTable({
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
                       >
-                        <Trash2 size={16} /> Delete Account
+                        <Trash2 size={16} /> Deactivate Account
                       </button>
                     </div>
                   )}

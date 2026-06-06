@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type UserProfile,
   type UserRole,
@@ -10,48 +11,11 @@ import UserFilterBar from "./components/UserFilterBar";
 import DeleteUserModal from "./components/DeleteUserModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import TablePagination from "../../../components/ui/TablePagination";
-
-const MOCK_USERS: UserProfile[] = [
-  {
-    id: "U-01",
-    avatarUrl: "https://ui-avatars.com/api/?name=Alex+D",
-    fullName: "Alex Doe",
-    email: "alex@example.com",
-    role: "Candidate",
-    createdAt: "2024-03-01 09:00",
-    status: "Active",
-  },
-  {
-    id: "U-02",
-    avatarUrl: "https://ui-avatars.com/api/?name=Tech+Vision",
-    fullName: "TechVision HR",
-    email: "hr@techvision.com",
-    role: "Employer",
-    createdAt: "2024-03-05 14:20",
-    status: "Active",
-  },
-  {
-    id: "U-03",
-    avatarUrl: "https://ui-avatars.com/api/?name=Sarah+M",
-    fullName: "Sarah Miller",
-    email: "sarah.m@gmail.com",
-    role: "Candidate",
-    createdAt: "2024-03-10 11:15",
-    status: "Locked",
-  },
-  {
-    id: "U-04",
-    avatarUrl: "https://ui-avatars.com/api/?name=Global+Sol",
-    fullName: "Global Solutions",
-    email: "admin@global.com",
-    role: "Employer",
-    createdAt: "2024-03-12 16:45",
-    status: "Active",
-  },
-];
+import { AdminService } from "../../../services/adminService";
+import type { AdminUserRecord } from "../../../types/admin";
 
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<UserProfile[]>(MOCK_USERS);
+  const queryClient = useQueryClient();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "All">("All");
@@ -70,41 +34,78 @@ export default function UserManagementPage() {
     user: UserProfile | null;
   }>({ isOpen: false, user: null });
 
-  const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch =
-        user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      "admin-users",
+      searchQuery,
+      roleFilter,
+      statusFilter,
+      currentPage,
+      itemsPerPage,
+    ],
+    queryFn: () =>
+      AdminService.getUsers({
+        search: searchQuery || undefined,
+        role:
+          roleFilter === "All"
+            ? undefined
+            : roleFilter === "Candidate"
+              ? "SEEKER"
+              : "EMPLOYER",
+        active:
+          statusFilter === "All" ? undefined : statusFilter === "Active",
+        offset: (currentPage - 1) * itemsPerPage,
+        limit: itemsPerPage,
+      }),
+  });
 
-      const matchesRole = roleFilter === "All" || user.role === roleFilter;
-      const matchesStatus =
-        statusFilter === "All" || user.status === statusFilter;
+  const toggleMutation = useMutation({
+    mutationFn: (id: number) => AdminService.toggleUserLock(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("User status updated successfully");
+    },
+    onError: () => toast.error("Failed to update user status"),
+  });
 
-      return matchesSearch && matchesRole && matchesStatus;
+  const deactivateMutation = useMutation({
+    mutationFn: (id: number) => AdminService.deactivateUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("User account deactivated successfully");
+    },
+    onError: () => toast.error("Failed to deactivate user"),
+  });
+
+  const users = useMemo(() => {
+    const mapUser = (user: AdminUserRecord): UserProfile => ({
+      id: String(user.id),
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user.displayName || user.email,
+      )}`,
+      fullName: user.displayName || user.email,
+      email: user.email,
+      role: user.roles?.includes("EMPLOYER") ? "Employer" : "Candidate",
+      createdAt: new Date(user.createdAt).toLocaleString(),
+      status: user.active && !user.banned ? "Active" : "Locked",
     });
-  }, [users, searchQuery, roleFilter, statusFilter]);
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredUsers.slice(start, start + itemsPerPage);
-  }, [filteredUsers, currentPage, itemsPerPage]);
+    return (data?.items || []).map(mapUser);
+  }, [data]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.totalItems || 0) / itemsPerPage),
+  );
 
   const executeStatusToggle = () => {
     if (lockConfirm.user) {
-      const newStatus =
-        lockConfirm.user.status === "Active" ? "Locked" : "Active";
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === lockConfirm.user!.id ? { ...u, status: newStatus } : u,
-        ),
-      );
+      toggleMutation.mutate(Number(lockConfirm.user.id));
     }
     setLockConfirm({ isOpen: false, user: null });
   };
   const executeDelete = (userId: string) => {
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
-    toast.success("User account deleted permanently");
+    deactivateMutation.mutate(Number(userId));
     setDeleteConfirm({ isOpen: false, user: null });
   };
 
@@ -122,19 +123,29 @@ export default function UserManagementPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
         <UserFilterBar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={(value) => {
+            setSearchQuery(value);
+            setCurrentPage(1);
+          }}
           roleFilter={roleFilter}
-          onRoleChange={setRoleFilter}
+          onRoleChange={(value) => {
+            setRoleFilter(value);
+            setCurrentPage(1);
+          }}
           statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
+          onStatusChange={(value) => {
+            setStatusFilter(value);
+            setCurrentPage(1);
+          }}
         />
 
         <UserTable
-          users={currentItems}
+          users={users}
           activeDropdownId={activeDropdownId}
           onToggleDropdown={setActiveDropdownId}
           onToggleStatusClick={(user) => setLockConfirm({ isOpen: true, user })}
           onDeleteClick={(user) => setDeleteConfirm({ isOpen: true, user })}
+          isLoading={isLoading}
         />
 
         <TablePagination

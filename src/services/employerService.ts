@@ -1,24 +1,52 @@
-import { privateApi } from "../api/api";
+import { privateApi, unwrap, unwrapPage } from "../api/api";
+import type { PageResult } from "../types/api";
+import type { EmployerProfile, JobResponse } from "../types/employer";
+import type { SavedCandidatesResponse } from "../types/savedCandidates";
 
 export const EmployerService = {
   setupProfile: async (formData: FormData) => {
-    const response = await privateApi.post("/employer", formData, {
+    return privateApi.post("/employer", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    return response;
   },
-  getProfile: async () => {
+  getProfile: async (): Promise<EmployerProfile> => {
     const response = await privateApi.get("/employer");
-    return response;
+    return unwrap<EmployerProfile>(response);
   },
-  getRecentJobs: async () => {
-    const response = await privateApi.get("/jobpost");
-    return response.data;
+  updateProfile: async (formData: FormData): Promise<EmployerProfile> => {
+    const response = await privateApi.patch("/employer", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return unwrap<EmployerProfile>(response);
   },
-  getSavedCandidates: async () => {
+  getSubscription: async () => {
+    const response = await privateApi.get("/employer/subscription");
+    return unwrap<{
+      currentPlan: string;
+      amount: number;
+      startedAt: string | null;
+      expiresAt: string | null;
+      canceled: boolean;
+    }>(response);
+  },
+  getRecentJobs: async (
+    params: { offset?: number; limit?: number } = {},
+  ): Promise<PageResult<JobResponse>> => {
+    const response = await privateApi.get("/jobpost", {
+      params: {
+        mine: true,
+        offset: params.offset ?? 0,
+        limit: params.limit ?? 20,
+      },
+    });
+    return unwrapPage<JobResponse>(response);
+  },
+  getSavedCandidates: async (): Promise<SavedCandidatesResponse[]> => {
     const response = await privateApi.get("/saved-candidates");
-    return response.data;
+    return unwrap<SavedCandidatesResponse[]>(response);
   },
 };

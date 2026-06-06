@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { type PaymentStatus } from "./components/StatusBadge";
 import PaymentDetailDrawer, {
@@ -8,78 +9,51 @@ import PaymentFilterBar from "./components/PaymentFilterBar";
 import PaymentTable from "./components/PaymentTable";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import TablePagination from "../../../components/ui/TablePagination";
+import { AdminService } from "../../../services/adminService";
+import type { AdminPaymentRecord } from "../../../types/admin";
 
-const MOCK_PAYMENTS: Payment[] = [
-  {
-    id: "TXN-80912",
-    user: "TechVision Inc.",
-    email: "billing@techvision.com",
-    plan: "Premium Plan",
-    amount: 299.0,
-    date: "2024-03-15 14:30",
-    status: "Completed",
-    paymentMethod: "Credit Card",
-    transactionRef: "ch_3N12AbCdEfGhIjKlMnOpQrSt",
-  },
-  {
-    id: "TXN-80913",
-    user: "Global Solutions",
-    email: "finance@global.com",
-    plan: "Standard Plan",
-    amount: 149.0,
-    date: "2024-03-15 15:45",
-    status: "Pending",
-    paymentMethod: "Bank Transfer",
-    transactionRef: "bt_987654321",
-  },
-  {
-    id: "TXN-80914",
-    user: "Alpha Startups",
-    email: "hello@alpha.co",
-    plan: "Basic Plan",
-    amount: 49.0,
-    date: "2024-03-16 09:15",
-    status: "Failed",
-    paymentMethod: "Paypal",
-    transactionRef: "pp_123456789",
-  },
-  {
-    id: "TXN-80915",
-    user: "Omega Corp",
-    email: "admin@omega.net",
-    plan: "Premium Plan",
-    amount: 299.0,
-    date: "2024-03-16 11:20",
-    status: "Completed",
-    paymentMethod: "Credit Card",
-    transactionRef: "ch_3N45AbCdEfGhIjKlMnOpQrSt",
-  },
-  {
-    id: "TXN-80916",
-    user: "Creative Minds",
-    email: "contact@creative.io",
-    plan: "Standard Plan",
-    amount: 149.0,
-    date: "2024-03-17 16:00",
-    status: "Canceled",
-    paymentMethod: "Credit Card",
-    transactionRef: "ch_3N67AbCdEfGhIjKlMnOpQrSt",
-  },
-  {
-    id: "TXN-80917",
-    user: "TechVision Inc.",
-    email: "billing@techvision.com",
-    plan: "Standard Plan",
-    amount: 149.0,
-    date: "2024-02-15 14:30",
-    status: "Completed",
-    paymentMethod: "Credit Card",
-    transactionRef: "ch_3N89AbCdEfGhIjKlMnOpQrSt",
-  },
-];
+const mapPaymentStatus = (
+  status: AdminPaymentRecord["status"],
+): PaymentStatus => {
+  switch (status) {
+    case "COMPLETED":
+      return "Completed";
+    case "FAILED":
+      return "Failed";
+    case "CANCELED":
+      return "Canceled";
+    default:
+      return "Pending";
+  }
+};
+
+const mapUiStatusToApiStatus = (status: PaymentStatus) => {
+  switch (status) {
+    case "Completed":
+      return "COMPLETED";
+    case "Failed":
+      return "FAILED";
+    case "Canceled":
+      return "CANCELED";
+    default:
+      return "PENDING";
+  }
+};
+
+const mapPayment = (payment: AdminPaymentRecord): Payment => ({
+  id: String(payment.id),
+  user: payment.employerName || "Employer",
+  email: payment.payerEmail || "Unknown",
+  plan: payment.planName,
+  amount: payment.cost,
+  date: new Date(payment.createdAt).toLocaleString(),
+  status: mapPaymentStatus(payment.status),
+  paymentMethod: payment.method || "N/A",
+  transactionRef: payment.transactionRef || "N/A",
+});
 
 export default function PaymentManagementPage() {
-  const [payments, setPayments] = useState<Payment[]>(MOCK_PAYMENTS);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "All">(
     "All",
@@ -99,23 +73,50 @@ export default function PaymentManagementPage() {
     newStatus: PaymentStatus | null;
   }>({ isOpen: false, id: null, newStatus: null });
 
-  const filterPayments = useMemo(() => {
-    return payments.filter((payment) => {
-      const resultSearch =
-        payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.user.toLowerCase().includes(searchQuery.toLowerCase());
-      const resultStatus =
-        statusFilter === "All" || payment.status === statusFilter;
-      return resultSearch && resultStatus;
-    });
-  }, [payments, searchQuery, statusFilter]);
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      "admin-payments",
+      currentPage,
+      itemsPerPage,
+      searchQuery,
+      statusFilter,
+    ],
+    queryFn: () =>
+      AdminService.getPayments({
+        page: currentPage - 1,
+        size: itemsPerPage,
+        search: searchQuery || undefined,
+        status:
+          statusFilter === "All"
+            ? undefined
+            : mapUiStatusToApiStatus(statusFilter),
+      }),
+  });
 
-  const totalPages = Math.ceil(filterPayments.length / itemsPerPage);
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      id,
+      newStatus,
+    }: {
+      id: number;
+      newStatus: PaymentStatus;
+    }) =>
+      AdminService.updatePaymentStatus(id, mapUiStatusToApiStatus(newStatus)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+      toast.success("Payment status updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update payment status");
+    },
+  });
 
-  const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filterPayments.slice(start, start + itemsPerPage);
-  }, [filterPayments, currentPage, itemsPerPage]);
+  const payments = useMemo(
+    () => (data?.content || []).map(mapPayment),
+    [data],
+  );
+
+  const totalPages = Math.max(1, data?.totalPages || 1);
 
   const selectedPayment = useMemo(() => {
     return payments.find((p) => p.id === selectedPaymentId) || null;
@@ -129,10 +130,7 @@ export default function PaymentManagementPage() {
   const executeStatusUpdate = () => {
     const { id, newStatus } = confirmConfig;
     if (id && newStatus) {
-      setPayments((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p)),
-      );
-      toast.success(`Transaction ${id} marked as ${newStatus}`);
+      updateStatusMutation.mutate({ id: Number(id), newStatus });
     }
     setConfirmConfig({ isOpen: false, id: null, newStatus: null });
   };
@@ -158,17 +156,24 @@ export default function PaymentManagementPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
         <PaymentFilterBar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={(value) => {
+            setSearchQuery(value);
+            setCurrentPage(1);
+          }}
           statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
+          onStatusChange={(value) => {
+            setStatusFilter(value);
+            setCurrentPage(1);
+          }}
         />
 
         <PaymentTable
-          payments={currentItems}
+          payments={payments}
           onViewDetail={setSelectedPaymentId}
           activeDropdownId={activeDropdownId}
           onToggleDropdown={setActiveDropdownId}
           onUpdateStatus={handleUpdateStatus}
+          isLoading={isLoading}
         />
 
         <TablePagination

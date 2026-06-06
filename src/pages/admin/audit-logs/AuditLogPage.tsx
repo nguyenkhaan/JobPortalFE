@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import {
   type AuditLog,
   type ActionType,
@@ -11,67 +12,33 @@ import LogDetailModal from "./components/LogDetailModal";
 import TablePagination from "../../../components/ui/TablePagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import AuditLogTable from "./components/AuditLogTable";
+import { AdminService } from "../../../services/adminService";
+import type { AdminAuditRecord } from "../../../types/admin";
 
-const MOCK_LOGS: AuditLog[] = [
-  {
-    id: "LOG-9001",
-    createdAt: "2024-05-28 08:15",
-    userId: "U-01",
-    email: "admin@system.com",
-    action: "Approve",
-    entityType: "EmployerProfile",
-    entityId: "EMP-001",
-    ipAddress: "192.168.1.1",
-    description: JSON.stringify({
-      previousStatus: "Pending",
-      newStatus: "Approved",
-      notes: "Verified docs.",
-    }),
-  },
-  {
-    id: "LOG-9002",
-    createdAt: "2024-05-27 14:20",
-    userId: "U-02",
-    email: "hr@techvision.com",
-    action: "Create",
-    entityType: "JobPost",
-    entityId: "JOB-405",
-    ipAddress: "14.22.105.11",
-    description: JSON.stringify({
-      title: "Senior React Dev",
-      salary: "$120k",
-      type: "Full-time",
-    }),
-  },
-  {
-    id: "LOG-9003",
-    createdAt: "2024-05-26 09:00",
-    userId: "U-03",
-    email: "candidate@gmail.com",
-    action: "Login",
-    entityType: "System",
-    entityId: "SYS",
-    ipAddress: "103.11.2.99",
-    description: "User logged in successfully via Google OAuth.",
-  },
-  {
-    id: "LOG-9004",
-    createdAt: "2024-04-15 16:45",
-    userId: "U-01",
-    email: "admin@system.com",
-    action: "Delete",
-    entityType: "User",
-    entityId: "U-999",
-    ipAddress: "192.168.1.1",
-    description: JSON.stringify({
-      deletedEmail: "spammer@bad.com",
-      reason: "Violated terms of service.",
-    }),
-  },
-];
+const mapActionType = (value: string): ActionType => {
+  switch (value) {
+    case "CREATE":
+      return "Create";
+    case "DELETE":
+      return "Delete";
+    default:
+      return "Update";
+  }
+};
+
+const mapEntityType = (value: string): EntityType => {
+  switch (value) {
+    case "User":
+    case "JobPost":
+    case "Payment":
+    case "System":
+      return value;
+    default:
+      return "EmployerProfile";
+  }
+};
+
 export default function AuditLogPage() {
-  const [logs, setLogs] = useState<AuditLog[]>(MOCK_LOGS);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState<ActionType | "All">("All");
   const [entityFilter, setEntityFilter] = useState<EntityType | "All">("All");
@@ -86,29 +53,54 @@ export default function AuditLogPage() {
   const [bulkDelete, setBulkDelete] = useState(false);
   const [clearOld, setClearOld] = useState(false);
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const matchSearch =
-        log.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.userId.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchAction = actionFilter === "All" || log.action === actionFilter;
-      const matchEntity =
-        entityFilter === "All" || log.entityId === entityFilter;
+  const { data, isLoading } = useQuery({
+    queryKey: [
+      "admin-audit-logs",
+      searchQuery,
+      actionFilter,
+      entityFilter,
+      startDate,
+      endDate,
+      currentPage,
+      itemsPerPage,
+    ],
+    queryFn: () =>
+      AdminService.getAuditLogs({
+        search: searchQuery || undefined,
+        actionType: actionFilter === "All" ? undefined : actionFilter.toUpperCase(),
+        entityName:
+          entityFilter === "All"
+            ? undefined
+            : entityFilter === "EmployerProfile"
+              ? "EmploymentProfile"
+              : entityFilter,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        offset: (currentPage - 1) * itemsPerPage,
+        limit: itemsPerPage,
+      }),
+  });
 
-      let matchDate = true;
-      if (startDate && endDate) {
-        const logDate = log.createdAt.split(" ")[0];
-        matchDate = logDate >= startDate && logDate <= endDate;
-      }
-      return matchSearch && matchAction && matchEntity && matchDate;
-    });
-  }, [logs, searchQuery, actionFilter, entityFilter, startDate, endDate]);
-
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
   const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredLogs.slice(start, start + itemsPerPage);
-  }, [filteredLogs, currentPage, itemsPerPage]);
+    const mapLog = (log: AdminAuditRecord): AuditLog => ({
+      id: String(log.id),
+      createdAt: new Date(log.eventTime).toLocaleString(),
+      userId: log.actorUserId ? String(log.actorUserId) : "N/A",
+      email: log.actorEmail || "Unknown",
+      action: mapActionType(log.actionType),
+      entityType: mapEntityType(log.entityName),
+      entityId: String(log.recordId),
+      ipAddress: "N/A",
+      description: `${log.actionType} ${log.entityName} #${log.recordId}`,
+    });
+
+    return (data?.items || []).map(mapLog);
+  }, [data]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.totalItems || 0) / itemsPerPage),
+  );
 
   const handleToggleSelectAll = (checked: boolean) => {
     if (checked) setSelectedIds(currentItems.map((log) => log.id));
@@ -121,18 +113,13 @@ export default function AuditLogPage() {
   };
 
   const executeBulkDelete = () => {
-    setLogs((prev) => prev.filter((log) => !selectedIds.includes(log.id)));
-    setSelectedIds([]);
+    toast.info("Audit log deletion is not available yet.");
     setBulkDelete(false);
-    toast.success(`${selectedIds.length} logs deleted successfully.`);
   };
 
   const executeClearOldLogs = () => {
-    setLogs((prev) =>
-      prev.filter((log) => !log.createdAt.startsWith("2024-01")),
-    );
+    toast.info("Bulk audit cleanup is not available yet.");
     setClearOld(false);
-    toast.success("Old logs cleared successfully");
   };
 
   return (
@@ -167,15 +154,30 @@ export default function AuditLogPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col flex-1 overflow-hidden">
         <AuditLogFilterBar
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={(value) => {
+            setSearchQuery(value);
+            setCurrentPage(1);
+          }}
           actionFilter={actionFilter}
-          onActionChange={setActionFilter}
+          onActionChange={(value) => {
+            setActionFilter(value);
+            setCurrentPage(1);
+          }}
           entityFilter={entityFilter}
-          onEntityChange={setEntityFilter}
+          onEntityChange={(value) => {
+            setEntityFilter(value);
+            setCurrentPage(1);
+          }}
           startDate={startDate}
-          onStartDateChange={setStartDate}
+          onStartDateChange={(value) => {
+            setStartDate(value);
+            setCurrentPage(1);
+          }}
           endDate={endDate}
-          onEndDateChange={setEndDate}
+          onEndDateChange={(value) => {
+            setEndDate(value);
+            setCurrentPage(1);
+          }}
         />
 
         <AuditLogTable
@@ -184,6 +186,7 @@ export default function AuditLogPage() {
           onToggleSelectAll={handleToggleSelectAll}
           onToggleSelectRow={handleToggleSelectRow}
           onViewDetail={setSelectedLog}
+          isLoading={isLoading}
         />
 
         <TablePagination

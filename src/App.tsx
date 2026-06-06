@@ -16,22 +16,22 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 
-import CompanyInfo from "./pages/employer/account-setup/CompanyInfo";
-import FoundingInfo from "./pages/employer/account-setup/FoundingInfo";
-import SocialLink from "./pages/employer/account-setup/SocialLinks";
-import Contact from "./pages/employer/account-setup/Contact";
-import SetupSuccess from "./pages/employer/account-setup/SetupSuccess";
+import CompanyInfo from "./pages/Employer/account-setup/CompanyInfo";
+import FoundingInfo from "./pages/Employer/account-setup/FoundingInfo";
+import SocialLink from "./pages/Employer/account-setup/SocialLinks";
+import Contact from "./pages/Employer/account-setup/Contact";
+import SetupSuccess from "./pages/Employer/account-setup/SetupSuccess";
 
-import Overview from "./pages/employer/dashboard/Overview";
-import PostJobPricing from "./pages/employer/post-job/PostJobPricing";
-import CheckoutPage from "./pages/employer/post-job/Checkout";
-import CreateJobForm from "./pages/employer/post-job/CreateJobForm";
-import MyJobsPage from "./pages/employer/my-jobs/MyJobsPage";
-import ApplicationsPage from "./pages/employer/applications/ApplicationsPage";
-import SavedCandidatesPage from "./pages/employer/saved-candidates/SavedCandidatesPage";
-import PlansBillingPage from "./pages/employer/plans-billing/PlansBillingPage";
-import EmployerSettingsPage from "./pages/employer/settings/SettingsPage";
-import EmployerProfilePage from "./pages/employer/profile/EmployerProfilePage";
+import Overview from "./pages/Employer/dashboard/Overview";
+import PostJobPricing from "./pages/Employer/post-job/PostJobPricing";
+import CheckoutPage from "./pages/Employer/post-job/Checkout";
+import CreateJobForm from "./pages/Employer/post-job/CreateJobForm";
+import MyJobsPage from "./pages/Employer/my-jobs/MyJobsPage";
+import ApplicationsPage from "./pages/Employer/applications/ApplicationsPage";
+import SavedCandidatesPage from "./pages/Employer/saved-candidates/SavedCandidatesPage";
+import PlansBillingPage from "./pages/Employer/plans-billing/PlansBillingPage";
+import EmployerSettingsPage from "./pages/Employer/settings/SettingsPage";
+import EmployerProfilePage from "./pages/Employer/profile/EmployerProfilePage";
 
 import AdminLayout from "./layouts/AdminLayout";
 import PaymentManagementPage from "./pages/admin/payments/PaymentManagementPage";
@@ -52,9 +52,9 @@ import FavoriteJobsPage from "./pages/jobseeker/dashboard/FavoriteJob/FavoriteJo
 import AppliedJobsPage from "./pages/jobseeker/dashboard/AppliedJob/AppliedJobs";
 import OverviewPage from "./pages/jobseeker/dashboard/Overview/Overview";
 import CandidateFullLayout from "./layouts/CandidateFullLayout";
-import JobDetailPage from "./pages/employer/my-jobs/JobDetailPage";
-import EditJobPage from "./pages/employer/my-jobs/components/EditJobPage";
-import FindCandidatesPage from "./pages/employer/find-candidates/FindCandidatesPage";
+import JobDetailPage from "./pages/Employer/my-jobs/JobDetailPage";
+import EditJobPage from "./pages/Employer/my-jobs/components/EditJobPage";
+import FindCandidatesPage from "./pages/Employer/find-candidates/FindCandidatesPage";
 
 const router = createBrowserRouter([
   {

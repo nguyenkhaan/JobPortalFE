@@ -5,12 +5,14 @@ interface IndustryTableProps {
   industries: Industry[];
   onEdit: (industry: Industry) => void;
   onDelete: (industry: Industry) => void;
+  isLoading?: boolean;
 }
 
 export default function IndustryTable({
   industries,
   onEdit,
   onDelete,
+  isLoading = false,
 }: IndustryTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -25,7 +27,13 @@ export default function IndustryTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {industries.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                Loading industries...
+              </td>
+            </tr>
+          ) : industries.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                 No industries found.

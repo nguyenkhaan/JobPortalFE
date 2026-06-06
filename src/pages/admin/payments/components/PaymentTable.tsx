@@ -8,6 +8,7 @@ interface PaymentTableProps {
   activeDropdownId: string | null;
   onToggleDropdown: (id: string | null) => void;
   onUpdateStatus: (id: string, newStatus: PaymentStatus) => void;
+  isLoading?: boolean;
 }
 
 export default function PaymentTable({
@@ -16,6 +17,7 @@ export default function PaymentTable({
   activeDropdownId,
   onToggleDropdown,
   onUpdateStatus,
+  isLoading = false,
 }: PaymentTableProps) {
   return (
     <div className="flex-1 overflow-auto">
@@ -32,7 +34,13 @@ export default function PaymentTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {payments.length === 0 ? (
+          {isLoading ? (
+            <tr>
+              <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                Loading payments...
+              </td>
+            </tr>
+          ) : payments.length === 0 ? (
             <tr>
               <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                 No transaction found.

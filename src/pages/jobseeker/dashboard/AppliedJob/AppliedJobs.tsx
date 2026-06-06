@@ -1,23 +1,40 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AppliedJobItem, { type AppliedJobItemProps } from "./AppliedJobItem";
 import DashboardPagination from "../../../../components/ui/DashboardPagination";
-
-const mockAppliedJobs: Omit<AppliedJobItemProps, "isSelected" | "onSelect">[] = [
-  { id: "1", logo: "https://logo.clearbit.com/upwork.com", role: "Networking Engineer", type: "Remote", location: "Washington", salary: "$50k-80k/month", dateApplied: "Feb 2, 2019 19:28", status: "Active" },
-  { id: "2", logo: "https://logo.clearbit.com/dribbble.com", role: "Product Designer", type: "Full Time", location: "Dhaka", salary: "$50k-80k/month", dateApplied: "Dec 7, 2019 23:26", status: "Active" },
-  { id: "3", logo: "https://logo.clearbit.com/apple.com", role: "Junior Graphic Designer", type: "Temporary", location: "Brazil", salary: "$50k-80k/month", dateApplied: "Feb 2, 2019 19:28", status: "Active" },
-  { id: "4", logo: "https://logo.clearbit.com/microsoft.com", role: "Visual Designer", type: "Contract Base", location: "Wisconsin", salary: "$50k-80k/month", dateApplied: "Dec 7, 2019 23:26", status: "Active" },
-  { id: "5", logo: "https://logo.clearbit.com/twitter.com", role: "Marketing Officer", type: "Full Time", location: "United States", salary: "$50k-80k/month", dateApplied: "Dec 4, 2019 21:42", status: "Active" },
-  { id: "6", logo: "https://logo.clearbit.com/facebook.com", role: "UI/UX Designer", type: "Full Time", location: "North Dakota", salary: "$50k-80k/month", dateApplied: "Dec 30, 2019 07:52", status: "Active" },
-  { id: "7", logo: "https://logo.clearbit.com/slack.com", role: "Software Engineer", type: "Full Time", location: "New York", salary: "$50k-80k/month", dateApplied: "Dec 30, 2019 05:18", status: "Active" },
-  { id: "8", logo: "https://logo.clearbit.com/reddit.com", role: "Front End Developer", type: "Full Time", location: "Michigan", salary: "$50k-80k/month", dateApplied: "Mar 20, 2019 23:14", status: "Active" },
-];
+import { ApplicationService } from "../../../../services/applicationService";
 
 export default function AppliedJobsPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = 5;
+  const { data } = useQuery({
+    queryKey: ["candidate-applied-jobs", currentPage],
+    queryFn: () =>
+      ApplicationService.getApplications({
+        offset: (currentPage - 1) * 8,
+        limit: 8,
+      }),
+  });
+
+  const totalPages = Math.max(1, Math.ceil((data?.totalItems || 0) / 8));
 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null); 
+
+  const jobs: Omit<AppliedJobItemProps, "isSelected" | "onSelect">[] =
+    data?.items.map((item) => ({
+      id: String(item.id),
+      logo:
+        item.jobPost?.id && item.jobPost?.title
+          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(item.jobPost.title)}`
+          : "https://ui-avatars.com/api/?name=Job",
+      role: item.jobPost?.title || "Applied Job",
+      type: "Application",
+      location: item.jobSeekerProfile?.address || "Remote",
+      salary: "Negotiable",
+      dateApplied: item.appliedAt
+        ? new Date(item.appliedAt).toLocaleString()
+        : "N/A",
+      status: item.status,
+    })) || [];
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -40,7 +57,7 @@ export default function AppliedJobsPage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          {mockAppliedJobs.map((job) => (
+          {jobs.map((job) => (
             <AppliedJobItem
               key={job.id}
               {...job}

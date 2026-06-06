@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -12,45 +13,73 @@ import {
 import { toast } from "sonner";
 import RejectReasonModal from "./components/RejectReasonModal";
 import { type EmployerProfile } from "./components/types";
-
-const MOCK_DETAIL: EmployerProfile = {
-  id: "EMP-001",
-  companyName: "TechVision Inc.",
-  email: "contact@techvision.com",
-  industry: "Information Technology",
-  registrationDate: "2024-03-20 10:30",
-  status: "Pending",
-  logoUrl:
-    "https://ui-avatars.com/api/?name=TV&background=2563eb&color=fff&size=200",
-  bannerUrl:
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop",
-  address: "123 Tech Boulevard, San Francisco, CA 94105",
-  website: "https://techvision.example.com",
-  businessLicenseUrl: "https://example.com/license.pdf",
-  description:
-    "TechVision is a global leader in cloud infrastructure and AI solutions. We provide cutting-edge services to enterprise clients worldwide. Our mission is to accelerate digital transformation.",
-};
+import { AdminService } from "../../../services/adminService";
 
 export default function EmployerReviewPage() {
-  // fix id declare but note use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-employer-detail", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await AdminService.getEmployerById(Number(id));
+      const mapped: EmployerProfile = {
+        id: String(response.id),
+        companyName: response.companyName,
+        email: response.email,
+        industry: response.industry,
+        registrationDate: new Date(response.createdAt).toLocaleString(),
+        status:
+          response.approvalStatus === "APPROVED"
+            ? "Approved"
+            : response.approvalStatus === "REJECTED"
+              ? "Rejected"
+              : "Pending",
+        logoUrl: response.logo || "https://ui-avatars.com/api/?name=Company",
+        bannerUrl: response.banner || "",
+        address: response.address,
+        website: response.companyWebsite,
+        businessLicenseUrl: null,
+        description: response.description,
+      };
+      return mapped;
+    },
+  });
+
+  const updateApprovalMutation = useMutation({
+    mutationFn: (payload: {
+      approvalStatus: "APPROVED" | "REJECTED";
+      rejectionReason?: string;
+    }) =>
+      AdminService.updateEmployerApproval(Number(id), payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-employers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-dashboard-summary"] });
+      navigate("/admin/employer-approvals");
+    },
+    onError: () => {
+      toast.error("Failed to update employer approval");
+    },
+  });
+
   const handleApprove = () => {
-    toast.success(`${MOCK_DETAIL.companyName} has been approved successfully.`);
-    navigate("/admin/employer-approvals");
+    updateApprovalMutation.mutate({ approvalStatus: "APPROVED" });
   };
 
   const handleReject = (reason: string) => {
-    console.log("Reject Reason:", reason);
-    toast.success(
-      `Rejection reason has been sent to ${MOCK_DETAIL.companyName}.`,
-    );
     setIsModalOpen(false);
-    navigate("/admin/employer-approvals");
+    updateApprovalMutation.mutate({
+      approvalStatus: "REJECTED",
+      rejectionReason: reason,
+    });
   };
+
+  if (isLoading || !data) {
+    return <div className="py-20 text-center text-gray-500">Loading employer profile...</div>;
+  }
 
   return (
     <div className="animate-in fade-in duration-500 pb-16">
@@ -80,7 +109,7 @@ export default function EmployerReviewPage() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="h-64 w-full relative bg-gray-100">
           <img
-            src={MOCK_DETAIL.bannerUrl}
+            src={data.bannerUrl}
             alt="Company Banner"
             className="w-full h-full object-cover"
           />
@@ -89,29 +118,29 @@ export default function EmployerReviewPage() {
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 -mt-16 mb-8 relative z-10">
             <div className="w-32 h-32 rounded-xl border-4 border-white bg-white shadow-md overflow-hidden shrink-0">
               <img
-                src={MOCK_DETAIL.logoUrl}
-                alt={MOCK_DETAIL.companyName}
+                src={data.logoUrl}
+                alt={data.companyName}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="pb-2 text-center sm:text-left flex-1">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {MOCK_DETAIL.companyName}
+                {data.companyName}
               </h1>
               <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 justify-center sm:justify-start">
                 <span className="flex items-center gap-1.5">
-                  <Building2 size={16} /> {MOCK_DETAIL.industry}
+                  <Building2 size={16} /> {data.industry}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <MapPin size={16} /> {MOCK_DETAIL.address}
+                  <MapPin size={16} /> {data.address}
                 </span>
                 <a
-                  href={MOCK_DETAIL.website}
+                  href={data.website}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 text-blue-600 hover:underline"
                 >
-                  <Globe size={16} /> {MOCK_DETAIL.website}
+                  <Globe size={16} /> {data.website}
                 </a>
               </div>
             </div>
@@ -124,7 +153,7 @@ export default function EmployerReviewPage() {
                   Company Description
                 </h3>
                 <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line p-6 bg-gray-50 rounded-xl border border-gray-100">
-                  {MOCK_DETAIL.description}
+                  {data.description}
                 </div>
               </section>
             </div>
@@ -139,7 +168,7 @@ export default function EmployerReviewPage() {
                     Account Email
                   </p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {MOCK_DETAIL.email}
+                    {data.email}
                   </p>
                 </div>
                 <div>
@@ -147,7 +176,7 @@ export default function EmployerReviewPage() {
                     Registered At
                   </p>
                   <p className="text-sm font-semibold text-gray-900">
-                    {MOCK_DETAIL.registrationDate}
+                    {data.registrationDate}
                   </p>
                 </div>
               </div>
@@ -156,7 +185,7 @@ export default function EmployerReviewPage() {
                 <h3 className="text-sm font-bold text-gray-900 mb-4">
                   Business Document
                 </h3>
-                {MOCK_DETAIL.businessLicenseUrl ? (
+                {data.businessLicenseUrl ? (
                   <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-red-50 text-red-500 rounded flex items-center justify-center shrink-0">
@@ -170,7 +199,7 @@ export default function EmployerReviewPage() {
                       </div>
                     </div>
                     <a
-                      href={MOCK_DETAIL.businessLicenseUrl}
+                      href={data.businessLicenseUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="text-sm font-semibold text-blue-600 hover:text-blue-800"
@@ -192,7 +221,7 @@ export default function EmployerReviewPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleReject}
-        companyName={MOCK_DETAIL.companyName}
+        companyName={data.companyName}
       />
     </div>
   );

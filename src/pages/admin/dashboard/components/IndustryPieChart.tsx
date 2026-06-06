@@ -7,16 +7,15 @@ import {
   Legend,
 } from "recharts";
 
-const data = [
-  { name: "IT & Software", value: 400 },
-  { name: "Finance", value: 300 },
-  { name: "Healthcare", value: 300 },
-  { name: "Education", value: 200 },
-];
-
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#6366f1"];
 
-export default function IndustryPieChart() {
+interface IndustryPieChartProps {
+  data: Array<{ name: string; value: number }>;
+}
+
+export default function IndustryPieChart({ data }: IndustryPieChartProps) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-200 flex flex-col">
       <h3 className="text-lg font-bold text-gray-900 mb-2">Jobs by Industry</h3>
@@ -60,7 +59,7 @@ export default function IndustryPieChart() {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%+18px)] text-center pointer-events-none">
-          <p className="text-3xl font-black text-gray-900">1.2K</p>
+          <p className="text-3xl font-black text-gray-900">{total}</p>
           <p className="text-xs font-bold text-gray-400 uppercase">
             Total Jobs
           </p>

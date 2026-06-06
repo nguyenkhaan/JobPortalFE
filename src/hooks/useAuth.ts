@@ -8,6 +8,7 @@ import type {
   VerifyResetPasswordRequest,
 } from "../types/auth";
 import { CookiesService } from "../services/cookieServices";
+import { LocalStorageService } from "../services/local-storage";
 import { TokenType } from "../bases/enums/jwt.enum";
 import { type ApiError } from "../api/api";
 
@@ -36,7 +37,7 @@ export const useLogin = () => {
 
       try {
         const user = await AuthService.getMe();
-        localStorage.setItem("user", JSON.stringify(user));
+        LocalStorageService.saveValue("me", user);
         return user;
       } catch (err) {
         return Promise.reject({ type: "PROFILE_ERROR", originalError: err });
@@ -51,13 +52,13 @@ export const useLogin = () => {
         if (isEmployer) {
           navigate("/employer/setup/company");
         } else {
-          navigate("/jobseeker/account-setup");
+          navigate("/candidate/settings");
         }
       } else {
         if (isEmployer) {
           navigate("/employer/dashboard");
         } else {
-          navigate("/jobseeker/dashboard");
+          navigate("/candidate/overview");
         }
       }
     },

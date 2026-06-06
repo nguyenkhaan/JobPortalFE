@@ -1,95 +1,14 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MyJobsTable, { type JobItem } from "./components/MyJobsTable";
 import Pagination from "../../../components/ui/Pagination";
 import PromoteJobModal from "./components/PromoteJobModal";
 import CustomDropdown from "../../../components/ui/DropDown";
-
-const mockJobs: JobItem[] = [
-  {
-    id: "1",
-    title: "UI/UX Designer",
-    type: "Full Time",
-    dateInfo: "27 days remaining",
-    status: "Active",
-    applications: 798,
-    isFeatured: true,
-  },
-  {
-    id: "2",
-    title: "Senior UX Designer",
-    type: "Internship",
-    dateInfo: "8 days remaining",
-    status: "Active",
-    applications: 185,
-  },
-  {
-    id: "3",
-    title: "Junior Graphic Designer",
-    type: "Full Time",
-    dateInfo: "24 days remaining",
-    status: "Active",
-    applications: 583,
-    isHighlighted: true,
-  },
-  {
-    id: "4",
-    title: "Front End Developer",
-    type: "Full Time",
-    dateInfo: "Dec 7, 2019",
-    status: "Expire",
-    applications: 740,
-  },
-  {
-    id: "5",
-    title: "Technical Support Specialist",
-    type: "Part Time",
-    dateInfo: "4 days remaining",
-    status: "Active",
-    applications: 556,
-  },
-  {
-    id: "6",
-    title: "Interaction Designer",
-    type: "Contract Base",
-    dateInfo: "Feb 2, 2019",
-    status: "Expire",
-    applications: 426,
-  },
-  {
-    id: "7",
-    title: "Software Engineer",
-    type: "Temporary",
-    dateInfo: "9 days remaining",
-    status: "Active",
-    applications: 922,
-  },
-  {
-    id: "8",
-    title: "Product Designer",
-    type: "Full Time",
-    dateInfo: "7 days remaining",
-    status: "Active",
-    applications: 994,
-  },
-  {
-    id: "9",
-    title: "Project Manager",
-    type: "Full Time",
-    dateInfo: "Dec 4, 2019",
-    status: "Expire",
-    applications: 196,
-  },
-  {
-    id: "10",
-    title: "Marketing Manager",
-    type: "Full Time",
-    dateInfo: "4 days remaining",
-    status: "Active",
-    applications: 492,
-  },
-];
+import { EmployerService } from "../../../services/employerService";
+import { JobService } from "../../../services/jobService";
+import type { JobResponse } from "../../../types/employer";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -101,7 +20,7 @@ const filterOptions = [
 
 export default function MyJobsPage() {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<JobItem[]>(mockJobs);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<string>("All Jobs");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -115,15 +34,65 @@ export default function MyJobsPage() {
     jobTitle: "",
   });
 
-  const filteredJobs = useMemo(() => {
-    if (filter === "All Jobs") return jobs;
-    return jobs.filter((job) => job.status === filter);
-  }, [jobs, filter]);
+  const { data, isLoading, dataUpdatedAt } = useQuery({
+    queryKey: ["employer-jobs", currentPage, filter],
+    queryFn: () =>
+      EmployerService.getRecentJobs({
+        offset: (currentPage - 1) * ITEMS_PER_PAGE,
+        limit: ITEMS_PER_PAGE,
+      }),
+  });
 
-  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
-  const currentJobs = filteredJobs.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+  const updateJobMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Record<string, unknown>;
+    }) => JobService.updateJob(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employer-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["employerDashboard"] });
+    },
+  });
+
+  const currentJobs = useMemo(() => {
+    const getDateInfo = (job: JobResponse) => {
+      const expiresAt = new Date(job.expiresAt);
+      const diffDays = Math.ceil(
+        (expiresAt.getTime() - dataUpdatedAt) / (1000 * 60 * 60 * 24),
+      );
+
+      return diffDays > 0
+        ? `${diffDays} days remaining`
+        : new Date(job.expiresAt).toLocaleDateString();
+    };
+
+    const mapped =
+      data?.items.map(
+        (job): JobItem => ({
+          id: String(job.id),
+          title: job.title,
+          type: job.employmentType.replaceAll("_", " "),
+          dateInfo: getDateInfo(job),
+          status: job.status === "OPEN" ? "Active" : "Expire",
+          applications: job.applicationCount || 0,
+          isFeatured: job.isFeatured,
+          isHighlighted: job.isHighlighted,
+        }),
+      ) || [];
+
+    if (filter === "All Jobs") {
+      return mapped;
+    }
+
+    return mapped.filter((job) => job.status === filter);
+  }, [data, dataUpdatedAt, filter]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.totalItems || 0) / ITEMS_PER_PAGE),
   );
 
   const handleFilterChange = (val: string) => {
@@ -136,26 +105,20 @@ export default function MyJobsPage() {
   };
 
   const handlePromoteClick = (id: string) => {
-    const job = jobs.find((j) => j.id === id);
+    const job = currentJobs.find((j) => j.id === id);
     if (job) {
       setPromoteModalData({ isOpen: true, jobId: job.id, jobTitle: job.title });
     }
   };
 
   const handleConfirmPromote = (plan: string) => {
-    setJobs((prev) =>
-      prev.map((job) => {
-        if (job.id === promoteModalData.jobId) {
-          return {
-            ...job,
-            isFeatured: plan === "featured",
-            isHighlighted: plan === "highlight",
-          };
-        }
-        return job;
-      }),
-    );
-
+    updateJobMutation.mutate({
+      id: Number(promoteModalData.jobId),
+      payload: {
+        isFeatured: plan === "featured",
+        isHighlighted: plan === "highlight",
+      },
+    });
     setPromoteModalData((prev) => ({ ...prev, isOpen: false }));
     toast.success(`Successfully promoted job as ${plan.toUpperCase()}`);
   };
@@ -165,9 +128,12 @@ export default function MyJobsPage() {
   };
 
   const handleMarkExpired = (id: string) => {
-    setJobs((prev) =>
-      prev.map((job) => (job.id === id ? { ...job, status: "Expire" } : job)),
-    );
+    updateJobMutation.mutate({
+      id: Number(id),
+      payload: {
+        status: "CLOSED",
+      },
+    });
     toast.success("Job marked as expired!");
   };
 
@@ -177,7 +143,7 @@ export default function MyJobsPage() {
         <h1 className="text-xl font-bold text-gray-900">
           My Jobs{" "}
           <span className="text-gray-400 font-medium">
-            ({filteredJobs.length})
+            ({currentJobs.length})
           </span>
         </h1>
         <div className="flex items-center gap-3">
@@ -199,6 +165,7 @@ export default function MyJobsPage() {
         onPromote={handlePromoteClick}
         onViewDetail={handleViewDetail}
         onMarkExpired={handleMarkExpired}
+        isLoading={isLoading}
       />
 
       {totalPages > 1 && (

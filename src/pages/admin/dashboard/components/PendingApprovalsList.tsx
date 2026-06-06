@@ -1,13 +1,13 @@
 import { Clock, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const MOCK_PENDING = [
-  { id: "EMP-01", name: "TechNova Solutions", time: "2 hours ago" },
-  { id: "EMP-02", name: "Global Finance Ltd", time: "5 hours ago" },
-  { id: "EMP-03", name: "HealthCare Plus", time: "1 day ago" },
-];
+interface PendingApprovalsListProps {
+  items: Array<{ id: string; name: string; time: string }>;
+}
 
-export default function PendingApprovalsList() {
+export default function PendingApprovalsList({
+  items,
+}: PendingApprovalsListProps) {
   const navigate = useNavigate();
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
@@ -24,7 +24,7 @@ export default function PendingApprovalsList() {
         </button>
       </div>
       <div className="p-2 flex-1">
-        {MOCK_PENDING.map((item) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors group"

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
+import type { ApiEnvelope, PageResult } from "../types/api";
 
 export interface ApiError {
   response?: {
@@ -60,3 +61,19 @@ privateApi.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+export const unwrap = <T>(response: unknown): T => {
+  if (
+    typeof response === "object" &&
+    response !== null &&
+    "data" in response &&
+    "success" in response
+  ) {
+    return (response as ApiEnvelope<T>).data;
+  }
+
+  return response as T;
+};
+
+export const unwrapPage = <T>(response: unknown): PageResult<T> =>
+  unwrap<PageResult<T>>(response);

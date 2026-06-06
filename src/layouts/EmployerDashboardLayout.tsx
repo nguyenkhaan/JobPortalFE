@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import EmployerSidebar from "../pages/employer/components/EmployerSidebar";
-import EmployerHeader from "../pages/employer/components/EmployerHeader";
+import EmployerSidebar from "../pages/Employer/components/EmployerSidebar";
+import EmployerHeader from "../pages/Employer/components/EmployerHeader";
 
 export default function EmployerDashboardLayout() {
   return (

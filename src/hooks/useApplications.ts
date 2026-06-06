@@ -3,12 +3,12 @@ import { toast } from "sonner";
 import { ApplicationService } from "../services/applicationService";
 import type { ApplicationStatus } from "../types/application";
 
-export const useApplications = () => {
+export const useApplications = (jobPostId?: number) => {
   return useQuery({
-    queryKey: ["jobApplications"],
+    queryKey: ["jobApplications", jobPostId],
     queryFn: async () => {
-      const response = await ApplicationService.getApplications();
-      return response.data;
+      const response = await ApplicationService.getApplications({ jobPostId });
+      return response.items;
     },
   });
 };

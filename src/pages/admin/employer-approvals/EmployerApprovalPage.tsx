@@ -1,67 +1,11 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import EmployerTable from "./components/EmployerTable";
 import { type EmployerProfile, type ApprovalStatus } from "./components/types";
-
-const MOCK_EMPLOYERS: EmployerProfile[] = [
-  {
-    id: "EMP-001",
-    companyName: "TechVision Inc.",
-    email: "contact@techvision.com",
-    industry: "Information Technology",
-    registrationDate: "2024-03-20 10:30",
-    status: "Pending",
-    logoUrl: "https://ui-avatars.com/api/?name=TV&background=2563eb&color=fff",
-    bannerUrl: "",
-    address: "",
-    website: "",
-    businessLicenseUrl: null,
-    description: "",
-  },
-  {
-    id: "EMP-002",
-    companyName: "Global Solutions",
-    email: "hello@global.com",
-    industry: "Finance & Banking",
-    registrationDate: "2024-03-19 14:15",
-    status: "Approved",
-    logoUrl: "https://ui-avatars.com/api/?name=GS&background=059669&color=fff",
-    bannerUrl: "",
-    address: "",
-    website: "",
-    businessLicenseUrl: null,
-    description: "",
-  },
-  {
-    id: "EMP-003",
-    companyName: "Alpha Startups",
-    email: "join@alpha.co",
-    industry: "Healthcare",
-    registrationDate: "2024-03-18 09:00",
-    status: "Rejected",
-    logoUrl: "https://ui-avatars.com/api/?name=AS&background=dc2626&color=fff",
-    bannerUrl: "",
-    address: "",
-    website: "",
-    businessLicenseUrl: null,
-    description: "",
-  },
-  {
-    id: "EMP-004",
-    companyName: "Omega Corp",
-    email: "admin@omega.net",
-    industry: "Manufacturing",
-    registrationDate: "2024-03-21 11:45",
-    status: "Pending",
-    logoUrl: "https://ui-avatars.com/api/?name=OC&background=4f46e5&color=fff",
-    bannerUrl: "",
-    address: "",
-    website: "",
-    businessLicenseUrl: null,
-    description: "",
-  },
-];
+import { AdminService } from "../../../services/adminService";
+import type { AdminEmployerRecord } from "../../../types/admin";
 
 const TABS: { label: string; value: ApprovalStatus }[] = [
   { label: "Pending Review", value: "Pending" },
@@ -74,18 +18,45 @@ export default function EmployerApprovalPage() {
   const [activeTab, setActiveTab] = useState<ApprovalStatus>("Pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredEmployers = useMemo(() => {
-    return MOCK_EMPLOYERS.filter((employer) => {
-      const matchesTab = employer.status === activeTab;
-      const matchesSearch =
-        employer.companyName
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        employer.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-employers", activeTab, searchQuery],
+    queryFn: () =>
+      AdminService.getEmployers({
+        search: searchQuery || undefined,
+        status:
+          activeTab === "Pending"
+            ? "PENDING"
+            : activeTab === "Approved"
+              ? "APPROVED"
+              : "REJECTED",
+        limit: 50,
+        offset: 0,
+      }),
+  });
 
-      return matchesTab && matchesSearch;
+  const filteredEmployers = useMemo(() => {
+    const mapRecord = (employer: AdminEmployerRecord): EmployerProfile => ({
+      id: String(employer.id),
+      companyName: employer.companyName,
+      email: employer.email,
+      industry: employer.industry,
+      registrationDate: new Date(employer.createdAt).toLocaleString(),
+      status:
+        employer.approvalStatus === "APPROVED"
+          ? "Approved"
+          : employer.approvalStatus === "REJECTED"
+            ? "Rejected"
+            : "Pending",
+      logoUrl: employer.logo || "https://ui-avatars.com/api/?name=Company",
+      bannerUrl: employer.banner || "",
+      address: employer.address,
+      website: employer.companyWebsite,
+      businessLicenseUrl: null,
+      description: employer.description,
     });
-  }, [activeTab, searchQuery]);
+
+    return (data?.items || []).map(mapRecord);
+  }, [data]);
 
   const handleReview = (id: string) => {
     navigate(`/admin/employer-approvals/${id}`);
@@ -139,7 +110,11 @@ export default function EmployerApprovalPage() {
           </div>
         </div>
 
-        <EmployerTable employers={filteredEmployers} onReview={handleReview} />
+        <EmployerTable
+          employers={filteredEmployers}
+          onReview={handleReview}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

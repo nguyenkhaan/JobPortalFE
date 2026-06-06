@@ -1,47 +1,17 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Industry } from "./components/types";
 import IndustryTable from "./components/IndustryTable";
 import IndustryModal from "./components/IndustryModal";
 import TablePagination from "../../../components/ui/TablePagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-
-const MOCK_INDUSTRIES: Industry[] = [
-  {
-    id: "IND-001",
-    name: "Information Technology",
-    jobCount: 145,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "IND-002",
-    name: "Finance & Banking",
-    jobCount: 89,
-    createdAt: "2024-01-18",
-  },
-  {
-    id: "IND-003",
-    name: "Healthcare & Medicine",
-    jobCount: 0,
-    createdAt: "2024-02-10",
-  },
-  {
-    id: "IND-004",
-    name: "Education & Training",
-    jobCount: 34,
-    createdAt: "2024-03-05",
-  },
-  {
-    id: "IND-005",
-    name: "Marketing & Advertising",
-    jobCount: 56,
-    createdAt: "2024-03-12",
-  },
-];
+import { AdminService } from "../../../services/adminService";
+import type { AdminIndustryRecord } from "../../../types/admin";
 
 export default function IndustryManagementPage() {
-  const [industries, setIndustries] = useState<Industry[]>(MOCK_INDUSTRIES);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,17 +23,58 @@ export default function IndustryManagementPage() {
     null,
   );
 
-  const filteredIndustries = useMemo(() => {
-    return industries.filter((industry) =>
-      industry.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-  }, [industries, searchQuery]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-industries", searchQuery, currentPage, itemsPerPage],
+    queryFn: () =>
+      AdminService.getIndustries({
+        name: searchQuery || undefined,
+        offset: (currentPage - 1) * itemsPerPage,
+        limit: itemsPerPage,
+      }),
+  });
 
-  const totalPages = Math.ceil(filteredIndustries.length / itemsPerPage);
+  const saveMutation = useMutation({
+    mutationFn: ({ id, name }: { id?: string; name: string }) =>
+      id
+        ? AdminService.updateIndustry(Number(id), name)
+        : AdminService.createIndustry(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-industries"] });
+      toast.success(
+        editingIndustry
+          ? "Industry updated successfully"
+          : "New industry created successfully",
+      );
+      setIsModalOpen(false);
+    },
+    onError: () => toast.error("Failed to save industry"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => AdminService.deleteIndustry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-industries"] });
+      toast.success("Industry deleted successfully");
+      setDeletingIndustry(null);
+    },
+    onError: () => toast.error("Failed to delete industry"),
+  });
+
   const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredIndustries.slice(start, start + itemsPerPage);
-  }, [filteredIndustries, currentPage, itemsPerPage]);
+    const mapIndustry = (industry: AdminIndustryRecord): Industry => ({
+      id: String(industry.id),
+      name: industry.name,
+      jobCount: industry.jobCount,
+      createdAt: new Date(industry.createdAt).toLocaleDateString(),
+    });
+
+    return (data?.items || []).map(mapIndustry);
+  }, [data]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((data?.totalItems || 0) / itemsPerPage),
+  );
 
   const handleOpenAddModal = () => {
     setEditingIndustry(null);
@@ -75,23 +86,7 @@ export default function IndustryManagementPage() {
   };
 
   const handleSubmitForm = (name: string) => {
-    if (editingIndustry) {
-      setIndustries((prev) =>
-        prev.map((industry) =>
-          industry.id === editingIndustry.id ? { ...industry, name } : industry,
-        ),
-      );
-      toast.success("Industry updated successfully");
-    } else {
-      const newIndustry: Industry = {
-        id: `IND-00${industries.length + 1}`,
-        name,
-        jobCount: 0,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setIndustries([newIndustry, ...industries]);
-      toast.success("New industry created successfully");
-    }
+    saveMutation.mutate({ id: editingIndustry?.id, name });
   };
 
   const handleDeleteConfirm = () => {
@@ -102,10 +97,7 @@ export default function IndustryManagementPage() {
         `Cannot delete "${deletingIndustry.name}". It is currently linked to ${deletingIndustry.jobCount} jobs.`,
       );
     } else {
-      setIndustries((prev) =>
-        prev.filter((industry) => industry.id !== deletingIndustry.id),
-      );
-      toast.success("Industry delete successfully");
+      deleteMutation.mutate(Number(deletingIndustry.id));
     }
   };
   return (
@@ -138,7 +130,10 @@ export default function IndustryManagementPage() {
               type="text"
               placeholder="Search industries..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white shadow-sm"
             />
           </div>
@@ -148,6 +143,7 @@ export default function IndustryManagementPage() {
           industries={currentItems}
           onEdit={handleOpenEditModal}
           onDelete={setDeletingIndustry}
+          isLoading={isLoading}
         />
 
         <TablePagination

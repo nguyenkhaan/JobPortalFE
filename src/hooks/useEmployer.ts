@@ -32,10 +32,9 @@ export const useEmployerProfilePageData = () => {
   return useQuery<EmployerProfilePageData>({
     queryKey: ["employerProfilePage"],
     queryFn: async () => {
-      const profileResponse = await EmployerService.getProfile();
-      const profile = profileResponse.data as EmployerProfile;
+      const profile = await EmployerService.getProfile();
 
-      const jobs = (await EmployerService.getRecentJobs()) as JobResponse[];
+      const jobs = (await EmployerService.getRecentJobs({ limit: 20 })).items;
 
       return { profile, jobs };
     },

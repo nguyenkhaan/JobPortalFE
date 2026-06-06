@@ -1,17 +1,11 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DashboardPagination from "../../../components/ui/DashboardPagination";
 
 import JobSearchBar from "./components/JobSearchBar";
 import FilterSortBar from "./components/FilterSortBar";
 import JobList from "./components/JobList";
-
-const EXPLORE_MOCK_JOBS = [
-  { id: "1", title: "Marketing Manager", type: "Remote", isFeatured: true, logo: "https://logo.clearbit.com/stripe.com", location: "New Mexico, USA", salary: "$50k-$80k/month", daysRemaining: "4 Days Remaining" },
-  { id: "2", title: "Project Manager", type: "Full Time", isFeatured: true, logo: "https://logo.clearbit.com/shopify.com", location: "Dhaka, Bangladesh", salary: "$50k-$80k/month", daysRemaining: "4 Days Remaining" },
-  { id: "3", title: "Interaction Designer", type: "Full Time", isFeatured: true, logo: "https://logo.clearbit.com/figma.com", location: "New York, USA", salary: "$50k-$80k/month", daysRemaining: "4 Days Remaining" },
-  { id: "4", title: "Networking Engineer", type: "Full Time", isFeatured: false, logo: "https://logo.clearbit.com/cisco.com", location: "Washington, USA", salary: "$30k-$35k/month", daysRemaining: "4 Days Remaining" },
-  { id: "5", title: "Product Designer", type: "Full Time", isFeatured: false, logo: "https://logo.clearbit.com/airbnb.com", location: "Ohio, USA", salary: "$50k-$80k/month", daysRemaining: "4 Days Remaining" }
-];
+import { JobService } from "../../../services/jobService";
 
 export default function FindJobPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -19,8 +13,42 @@ export default function FindJobPage() {
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [locationKeyword, setLocationKeyword] = useState("");
-  
-  const totalPages = 5;
+
+  const { data, dataUpdatedAt } = useQuery({
+    queryKey: ["public-jobs", currentPage, searchKeyword],
+    queryFn: () =>
+      JobService.getJobs({
+        keyword: searchKeyword || undefined,
+        offset: (currentPage - 1) * 12,
+        limit: 12,
+      }),
+  });
+
+  const jobs =
+    data?.items.map((job) => {
+      const salaryText =
+        job.salaryMin > 0 && job.salaryMax > 0
+          ? `$${job.salaryMin}-$${job.salaryMax}/${job.salaryType.toLowerCase()}`
+          : "Negotiable";
+      const diffDays = Math.ceil(
+        (new Date(job.expiresAt).getTime() - dataUpdatedAt) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      return {
+        id: String(job.id),
+        title: job.title,
+        type: job.employmentType.replaceAll("_", " "),
+        isFeatured: Boolean(job.isFeatured),
+        logo: job.employer?.logo || "https://ui-avatars.com/api/?name=Job",
+        location: job.employer?.companyName || locationKeyword || "Remote",
+        salary: salaryText,
+        daysRemaining:
+          diffDays > 0 ? `${diffDays} Days Remaining` : "Expired",
+      };
+    }) || [];
+
+  const totalPages = Math.max(1, Math.ceil((data?.totalItems || 0) / 12));
 
   const handleToggleSave = (id: string | number) => {
     const stringId = String(id);
@@ -51,7 +79,7 @@ export default function FindJobPage() {
         <FilterSortBar viewMode={viewMode} setViewMode={setViewMode} />
 
         <JobList 
-          jobs={EXPLORE_MOCK_JOBS} 
+          jobs={jobs} 
           viewMode={viewMode} 
           savedJobIds={savedJobIds} 
           onToggleSave={handleToggleSave} 

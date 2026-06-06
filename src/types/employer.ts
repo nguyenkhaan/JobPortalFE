@@ -38,15 +38,35 @@ export interface EmployerProfile {
   facebookUrl?: string;
   youtubeUrl?: string;
   linkedInUrl?: string;
+  approvalStatus?: string;
+  rejectionReason?: string | null;
 }
 
 export interface JobResponse {
   id: number;
   title: string;
+  description: string;
   employmentType: string;
   salaryMin: number;
   salaryMax: number;
   salaryType: string;
   expiresAt: string;
   status: string;
+  jobLevel?: string;
+  educationLevel?: string;
+  experience?: number;
+  tags?: string;
+  isFeatured?: boolean;
+  isHighlighted?: boolean;
+  jobRole?: string;
+  responsibilities?: string;
+  vacancies?: number;
+  applicationCount?: number;
+  industries?: { id: number; name: string }[];
+  employer?: {
+    id: number;
+    companyName: string;
+    companyWebsite: string;
+    logo: string | null;
+  };
 }

@@ -25,7 +25,7 @@ export const getAuthStateFromStorage = (): AuthState => {
     user: me ?? null,
     roles,
     isAdmin: roles.includes("ADMIN"),
-    isEmployee: roles.includes("EMPLOYERS"),
-    isJobSeeker: roles.includes("JOB-SEEKERS"),
+    isEmployee: roles.includes("EMPLOYER"),
+    isJobSeeker: roles.includes("SEEKER"),
   };
 };

@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     LocalStorageService.removeValue("me");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
   }, []);
 
   useEffect(() => {

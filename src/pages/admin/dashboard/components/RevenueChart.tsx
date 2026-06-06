@@ -8,16 +8,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { name: "Jan", revenue: 4000 },
-  { name: "Feb", revenue: 3000 },
-  { name: "Mar", revenue: 5500 },
-  { name: "Apr", revenue: 4500 },
-  { name: "May", revenue: 6000 },
-  { name: "Jun", revenue: 8000 },
-];
+interface RevenueChartProps {
+  data: Array<{ name: string; revenue: number }>;
+}
 
-export default function RevenueChart() {
+export default function RevenueChart({ data }: RevenueChartProps) {
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-112 flex flex-col">
       <h3 className="text-lg font-bold text-gray-900 mb-6">Revenue Overview</h3>
